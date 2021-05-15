@@ -37,6 +37,9 @@
 
 #define T_HANDLE T_POINTER
 
+// For Static Linking. Fixes a collision with _winapi.c
+#define OverlappedType _overlapped_OverlappedType
+
 enum {TYPE_NONE, TYPE_NOT_STARTED, TYPE_READ, TYPE_READINTO, TYPE_WRITE,
       TYPE_ACCEPT, TYPE_CONNECT, TYPE_DISCONNECT, TYPE_CONNECT_NAMED_PIPE,
       TYPE_WAIT_NAMED_PIPE_AND_CONNECT, TYPE_TRANSMIT_FILE, TYPE_READ_FROM,
