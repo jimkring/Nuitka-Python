@@ -42,8 +42,6 @@
             <HostPython>@(HostPython)</HostPython>
             <HostPython Condition="$(HostPython.Contains(';'))">$(HostPython.Remove($(HostPython.IndexOf(';'))))</HostPython>
         </PropertyGroup>
-        <Exec Command="&quot;$(HostPython)&quot; -m pip install -U blurb" WorkingDirectory="$(PCbuild)" />
-        <Exec Command="&quot;$(HostPython)&quot; -m blurb merge -f &quot;$(BuildPath)NEWS.txt&quot;" WorkingDirectory="$(PCbuild)" />
     </Target>
     
     <Import Project="..\msi.targets" />
