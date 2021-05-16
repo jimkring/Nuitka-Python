@@ -16,6 +16,9 @@
             <Component Id="sqlite3.lib" Directory="libs" Guid="*">
                 <File Name="sqlite3.lib" KeyPath="yes" />
             </Component>
+            <Component Id="liblzma.lib" Directory="libs" Guid="*">
+                <File Name="liblzma.lib" KeyPath="yes" />
+            </Component>
             <Component Id="libcrypto.lib" Directory="libs" Guid="*">
                 <File Name="libcrypto.lib" KeyPath="yes" />
             </Component>
