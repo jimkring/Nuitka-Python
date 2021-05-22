@@ -14,7 +14,7 @@ Quick Start Guide
 Building Python using MSVC 9.0 via MSBuild
 ------------------------------------------
 
-This directory is used to build Python for Win32 and x64 platforms, e.g.
+This directory is used to build Nuitka-Python for Win32 and x64 platforms, e.g.
 Windows 2000 and later.  In order to use the project files in this
 directory, you must have installed the MSVC 9.0 compilers, the v90
 PlatformToolset project files for MSBuild, and MSBuild version 4.0 or later.
@@ -68,7 +68,7 @@ Debug
     python27_d.dll, python_d.exe, parser_d.pyd, and so on.  Both the
     build and rt (run test) batch files in this directory accept a -d
     option for debug builds.  If you are building Python to help with
-    development of CPython, you will most likely use this configuration.
+    development of Nuitka-Python, you will most likely use this configuration.
 PGInstrument, PGUpdate
     Used to build Python in Release configuration using PGO, which
     requires Professional Edition of Visual Studio 2008.  See the
@@ -132,14 +132,14 @@ For more info, see the Readme in the VC/Redist folder.
 Sub-Projects
 ------------
 
-The CPython project is split up into several smaller sub-projects which
+The Nuitka-Python project is split up into several smaller sub-projects which
 are managed by the pcbuild.sln solution file.  Each sub-project is
 represented by a .vcxproj and a .vcxproj.filters file starting with the
 name of the sub-project.  These sub-projects fall into a few general
 categories:
 
 The following sub-projects represent the bare minimum required to build
-a functioning CPython interpreter.  If nothing else builds but these,
+a functioning Nuitka-Python interpreter.  If nothing else builds but these,
 you'll have a very limited but usable python.exe:
 pythoncore
     .dll and .lib
@@ -147,7 +147,7 @@ python
     .exe
 
 These sub-projects provide extra executables that are useful for running
-CPython in different ways:
+Nuitka-Python in different ways:
 pythonw
     pythonw.exe, a variant of python.exe that doesn't open a Command
     Prompt window
