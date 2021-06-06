@@ -11,8 +11,8 @@ import pathlib
 import zipfile
 from urllib.request import urlretrieve
 
-def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose):
-    repo = f'cpython-{"bin" if binary else "source"}-deps'
+def fetch_zip(commit_hash, zip_dir, *, org='Nuitka', binary=False, verbose):
+    repo = f'Nuitka-Python-{"bin" if binary else "source"}-deps'
     url = f'https://github.com/{org}/{repo}/archive/{commit_hash}.zip'
     reporthook = None
     if verbose:
