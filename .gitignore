@@ -143,4 +143,9 @@ Tools/ssl/win32
 /Modules/Setup.bootstrap
 /Modules/Setup.stdlib
 /Python/deepfreeze/
-/Python/frozen_modules/ 
+/Python/frozen_modules/
+
+# Nuitka-Python specifics here:
+nuget-result
+output
+
