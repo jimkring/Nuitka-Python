@@ -924,8 +924,13 @@ multisslcompile: build_all
 multissltest: build_all
 	$(RUNSHARED) ./$(BUILDPYTHON) Tools/ssl/multissltests.py
 
+gcdainstall:
+	echo "Installing gcda files"
+	mkdir -p $(LIBDIR)/pgo
+	find . -name '*.gc??' -exec cp {} $(LIBDIR)/pgo/ \;
+
 # Install everything
-install:	@FRAMEWORKINSTALLFIRST@ commoninstall bininstall maninstall @FRAMEWORKINSTALLLAST@
+install:	@FRAMEWORKINSTALLFIRST@ gcdainstall commoninstall bininstall maninstall @FRAMEWORKINSTALLLAST@
 	if test "x$(ENSUREPIP)" != "xno"  ; then \
 		case $(ENSUREPIP) in \
 			upgrade) ensurepip="--upgrade" ;; \
@@ -1413,9 +1418,10 @@ clean: pycremoval
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 
 profile-removal:
-	find . -name '*.gc??' -exec rm -f {} ';'
-	find . -name '*.profclang?' -exec rm -f {} ';'
-	find . -name '*.dyn' -exec rm -f {} ';'
+	echo "Removing profile files:"
+	find . -name '*.gc??' -print -exec rm -f {} ';'
+	find . -name '*.profclang?' -print -exec rm -f {} ';'
+	find . -name '*.dyn' -print -exec rm -f {} ';'
 
 clobber: clean profile-removal
 	-rm -f $(BUILDPYTHON) $(PGEN) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
