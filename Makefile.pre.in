@@ -430,7 +430,8 @@ profile-opt:
 	@echo "Rebuilding with profile guided optimizations:"
 	$(MAKE) clean
 	$(MAKE) build_all_use_profile
-	$(MAKE) profile-removal
+	# Keep it, for usage by Nuitka.
+	# $(MAKE) profile-removal
 
 build_all_generate_profile:
 	$(MAKE) @DEF_MAKE_RULE@ CFLAGS="$(CFLAGS) $(PGO_PROF_GEN_FLAG) @LTOFLAGS@" LDFLAGS="$(LDFLAGS) $(PGO_PROF_GEN_FLAG) @LTOFLAGS@" LIBS="$(LIBS)"
