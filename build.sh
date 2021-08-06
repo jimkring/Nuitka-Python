@@ -10,12 +10,6 @@ sudo apt-get install -y build-essential checkinstall libreadline-gplv2-dev libnc
 # Have this as a standard path. We are not yet relocatable, but that will come hopefully.
 target=/opt/nuitka-python27
 
-# These tests are flaky and cause hangs with PGO.
-rm -f Lib/test/test_ftplib.py
-rm -f Lib/test/test_poplib.py
-rm -f Lib/test/test_smtplib.py
-rm -f Lib/test/test_ssl.py
-
 # The UCS4 has best compatibility with wheels on PyPI it seems.
 ./configure --prefix=$target --disable-shared --enable-ipv6 --enable-unicode=ucs4 \
   --enable-optimizations --with-computed-gotos --with-fpectl \
