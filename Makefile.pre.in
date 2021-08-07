@@ -928,6 +928,7 @@ gcdainstall:
 	echo "Installing gcda files"
 	mkdir -p $(LIBDIR)/pgo
 	find . -name '*.gc??' -exec cp {} $(LIBDIR)/pgo/ \;
+	cp $(LIBRARY_OBJS) $(LIBDIR)/pgo/
 
 # Install everything
 install:	@FRAMEWORKINSTALLFIRST@ gcdainstall commoninstall bininstall maninstall @FRAMEWORKINSTALLLAST@
