@@ -12,11 +12,17 @@ target=/opt/nuitka-python27
 
 # The UCS4 has best compatibility with wheels on PyPI it seems.
 ./configure --prefix=$target --disable-shared --enable-ipv6 --enable-unicode=ucs4 \
-  --enable-optimizations --with-computed-gotos --with-fpectl \
-  CC=gcc CFLAGS="-g" LDFLAGS="-g -Xlinker -export-dynamic -rdynamic -Bsymbolic-functions -Wl,-z,relro" && make LDFLAGS="-g -Xlinker -export-dynamic -rdynamic -Bsymbolic-functions -Wl,-z,relro"
+  --enable-optimizations --with-lto --with-computed-gotos --with-fpectl \
+  CC=gcc CFLAGS="-g" LDFLAGS="-g -Xlinker -export-dynamic -rdynamic -Bsymbolic-functions -Wl,-z,relro"
 
-# Delayed installation, to avoid having it not there for testing purposes
-# while compiling, which is slow due to PGO.
+make -j 32 \
+        EXTRA_CFLAGS="-g -flto -fuse-linker-plugin -ffat-lto-objects" \
+        PROFILE_TASK='./Lib/test/regrtest.py -x test_bsddb3 test_compiler test_cpickle test_cprofile test_dbm_dumb test_dbm_ndbm test_distutils test_ensurepip test_gdb test_io test_linuxaudiodev test_multiprocessing test_ossaudiodev test_platform test_pydoc test_socketserver test_subprocess test_sundry test_thread test_threaded_import test_threadedtempfile test_threading test_threading_local test_threadsignals test_xmlrpc test_zipfile' profile-opt
+
+make build_all_merge_profile
+
+# Delayed deletion of old installation, to avoid having it not there for testing purposes
+# while compiling, which is slow due to PGO beign applied.
 sudo rm -rf $target && sudo make install
 
 # Make sure to have pip installed, might even remove it afterwards, Debian
