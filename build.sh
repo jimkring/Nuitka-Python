@@ -5,15 +5,22 @@ set -x
 
 # Install Debian dependencies.
 # TODO: Support Fedora/CentOS/etc. as well.
+sudo apt-get update
 sudo apt-get install -y build-essential checkinstall libreadline-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev
 
 # Have this as a standard path. We are not yet relocatable, but that will come hopefully.
 target=/opt/nuitka-python27
 
+# Allow to overload the compiler used via CC environment variable
+if [ "$CC" = "" ]
+then
+  CC=gcc
+fi
+
 # The UCS4 has best compatibility with wheels on PyPI it seems.
 ./configure --prefix=$target --disable-shared --enable-ipv6 --enable-unicode=ucs4 \
   --enable-optimizations --with-lto --with-computed-gotos --with-fpectl \
-  CC=gcc CFLAGS="-g" LDFLAGS="-g -Xlinker -export-dynamic -rdynamic -Bsymbolic-functions -Wl,-z,relro"
+  CC=$CC CFLAGS="-g" LDFLAGS="-g -Xlinker -export-dynamic -rdynamic -Bsymbolic-functions -Wl,-z,relro"
 
 make -j 32 \
         EXTRA_CFLAGS="-g -flto -fuse-linker-plugin -ffat-lto-objects" \
