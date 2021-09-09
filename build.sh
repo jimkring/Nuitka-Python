@@ -15,12 +15,15 @@ target=/opt/nuitka-python27
 if [ "$CC" = "" ]
 then
   CC=gcc
+  CXX=g++
+else
+  CXX=`echo "$CC" | sed -e 's#cc#++#'`
 fi
 
 # The UCS4 has best compatibility with wheels on PyPI it seems.
 ./configure --prefix=$target --disable-shared --enable-ipv6 --enable-unicode=ucs4 \
   --enable-optimizations --with-lto --with-computed-gotos --with-fpectl \
-  CC=$CC CFLAGS="-g" LDFLAGS="-g -Xlinker -export-dynamic -rdynamic -Bsymbolic-functions -Wl,-z,relro"
+  CC=$CC CXX=$CXX CFLAGS="-g" LDFLAGS="-g -Xlinker -export-dynamic -rdynamic -Bsymbolic-functions -Wl,-z,relro"
 
 make -j 32 \
         EXTRA_CFLAGS="-g -flto -fuse-linker-plugin -ffat-lto-objects" \
