@@ -26,7 +26,7 @@ fi
   CC=$CC CXX=$CXX CFLAGS="-g" LDFLAGS="-g -Xlinker -export-dynamic -rdynamic -Bsymbolic-functions -Wl,-z,relro"
 
 make -j 32 \
-        EXTRA_CFLAGS="-g -flto -fuse-linker-plugin -ffat-lto-objects" \
+        EXTRA_CFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects" \
         PROFILE_TASK='./Lib/test/regrtest.py -x test_bsddb3 test_compiler test_cpickle test_cprofile test_dbm_dumb test_dbm_ndbm test_distutils test_ensurepip test_gdb test_io test_linuxaudiodev test_multiprocessing test_ossaudiodev test_platform test_pydoc test_socketserver test_subprocess test_sundry test_thread test_threaded_import test_threadedtempfile test_threading test_threading_local test_threadsignals test_xmlrpc test_zipfile' profile-opt
 
 make build_all_merge_profile
