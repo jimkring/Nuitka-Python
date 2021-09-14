@@ -10,6 +10,14 @@ import tempfile
 import nputils
 from importlib.machinery import SourceFileLoader
 
+# Portability:
+if str is bytes:
+    from urllib import (  # pylint: disable=I0021,import-error,no-name-in-module
+        urlretrieve,
+    )
+else:
+    from urllib.request import urlretrieve
+
 PACKAGE_BASE_URL = "https://raw.githubusercontent.com/Nuitka/Nuitka-Python-packages/master"
 #PACKAGE_BASE_URL = "file:///C:/src/Nuitka-Python-packages"
 
@@ -43,7 +51,7 @@ def install_build_tool(name):
 
     with tempfile.TemporaryDirectory() as temp_dir:
         for file in package_index["files"]:
-            urllib.request.urlretrieve("{package_dir_url}/{file}".format(**locals()), os.path.join(temp_dir, file))
+            urlretrieve("{package_dir_url}/{file}".format(**locals()), os.path.join(temp_dir, file))
 
         build_script_module_name = "build_script{os.path.basename(temp_dir)}.{name}".format(**locals())
         initcwd = os.getcwd()
@@ -97,7 +105,7 @@ def install_dependency(name):
 
     with tempfile.TemporaryDirectory() as temp_dir:
         for file in package_index["files"]:
-            urllib.request.urlretrieve("{package_dir_url}/{file}".format(**locals()), os.path.join(temp_dir, file))
+            urlretrieve("{package_dir_url}/{file}".format(**locals()), os.path.join(temp_dir, file))
 
         build_script_module_name = "build_script{os.path.basename(temp_dir)}.{name}".format(**locals())
         initcwd = os.getcwd()
@@ -169,7 +177,7 @@ class InstallRequirement(_InstallRequirement):
                     install_dependency(dep)
 
             for file in matched_source["files"]:
-                urllib.request.urlretrieve("{package_dir_url}/{file}".format(**locals()), os.path.join(install_temp_dir, file))
+                urlretrieve("{package_dir_url}/{file}".format(**locals()), os.path.join(install_temp_dir, file))
 
 
             build_script_module_name = "build_script{os.path.basename(install_temp_dir)}.{self.name}".format(**locals())
