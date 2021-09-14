@@ -24,9 +24,9 @@ from pip._internal.cli.cmdoptions import make_target_python
 from pip._internal.utils.temp_dir import TempDirectory
 
 
-def install_build_tool(name: str):
-    package_dir_url = f"{PACKAGE_BASE_URL}/build_tools/{name}"
-    data = urllib.request.urlopen(f"{package_dir_url}/index.json").read()
+def install_build_tool(name):
+    package_dir_url = "{PACKAGE_BASE_URL}/build_tools/{name}".format(PACKAGE_BASE_URL=PACKAGE_BASE_URL, **locals())
+    data = urllib.request.urlopen("{package_dir_url}/index.json".format(**locals())).read()
     package_index = json.loads(data)
     if 'build_tools' in package_index:
         for tool in package_index['build_tools']:
@@ -36,16 +36,16 @@ def install_build_tool(name: str):
         with open(os.path.join(nputils.BUILD_TOOLS_INSTALL_DIR, name, 'version.txt'), 'r') as f:
             version = f.read()
             if version == package_index['version']:
-                print(f"Skipping installed build tool {name}.")
+                print("Skipping installed build tool {name}.".format(**locals()))
                 return
 
-    print(f"Setting up build tool {name}...")
+    print("Setting up build tool {name}...".format(**locals()))
 
     with tempfile.TemporaryDirectory() as temp_dir:
         for file in package_index["files"]:
-            urllib.request.urlretrieve(f"{package_dir_url}/{file}", os.path.join(temp_dir, file))
+            urllib.request.urlretrieve("{package_dir_url}/{file}".format(**locals()), os.path.join(temp_dir, file))
 
-        build_script_module_name = f"build_script{os.path.basename(temp_dir)}.{name}"
+        build_script_module_name = "build_script{os.path.basename(temp_dir)}.{name}".format(**locals())
         initcwd = os.getcwd()
         initenviron = dict(os.environ)
         try:
@@ -75,9 +75,9 @@ def install_build_tool(name: str):
         f.write(package_index["version"])
 
 
-def install_dependency(name: str):
-    package_dir_url = f"{PACKAGE_BASE_URL}/dependencies/{name}"
-    data = urllib.request.urlopen(f"{package_dir_url}/index.json").read()
+def install_dependency(name):
+    package_dir_url = "{PACKAGE_BASE_URL}/build_tools/{name}".format(PACKAGE_BASE_URL=PACKAGE_BASE_URL, **locals())
+    data = urllib.request.urlopen("{package_dir_url}/index.json".format(**locals())).read()
     package_index = json.loads(data)
     if 'build_tools' in package_index:
         for tool in package_index['build_tools']:
@@ -90,16 +90,16 @@ def install_dependency(name: str):
         with open(os.path.join(nputils.DEPENDENCY_INSTALL_DIR, name, 'version.txt'), 'r') as f:
             version = f.read()
             if version == package_index['version']:
-                print(f"Skipping installed dependency {name}.")
+                print("Skipping installed dependency {name}.".format(**locals()))
                 return
 
-    print(f"Compiling dependency {name}...")
+    print("Compiling dependency {name}...".format(**locals()))
 
     with tempfile.TemporaryDirectory() as temp_dir:
         for file in package_index["files"]:
-            urllib.request.urlretrieve(f"{package_dir_url}/{file}", os.path.join(temp_dir, file))
+            urllib.request.urlretrieve("{package_dir_url}/{file}".format(**locals()), os.path.join(temp_dir, file))
 
-        build_script_module_name = f"build_script{os.path.basename(temp_dir)}.{name}"
+        build_script_module_name = "build_script{os.path.basename(temp_dir)}.{name}".format(**locals())
         initcwd = os.getcwd()
         initenviron = dict(os.environ)
         try:
@@ -145,8 +145,8 @@ class InstallRequirement(_InstallRequirement):
             pycompile=True  # type: bool
     ):
         try:
-            package_dir_url = f"{PACKAGE_BASE_URL}/packages/{self.name}"
-            data = urllib.request.urlopen(f"{package_dir_url}/index.json").read()
+            package_dir_url = "{PACKAGE_BASE_URL}/build_tools/{name}".format(PACKAGE_BASE_URL=PACKAGE_BASE_URL, **locals())
+            data = urllib.request.urlopen("{package_dir_url}/index.json".format(**locals())).read()
             package_index = json.loads(data)
             matched_source = None
             for source in package_index["scripts"]:
@@ -169,10 +169,10 @@ class InstallRequirement(_InstallRequirement):
                     install_dependency(dep)
 
             for file in matched_source["files"]:
-                urllib.request.urlretrieve(f"{package_dir_url}/{file}", os.path.join(install_temp_dir, file))
+                urllib.request.urlretrieve("{package_dir_url}/{file}".format(**locals()), os.path.join(install_temp_dir, file))
 
 
-            build_script_module_name = f"build_script{os.path.basename(install_temp_dir)}.{self.name}"
+            build_script_module_name = "build_script{os.path.basename(install_temp_dir)}.{self.name}".format(**locals())
             initcwd = os.getcwd()
             initenviron = dict(os.environ)
             try:
