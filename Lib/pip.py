@@ -1,14 +1,10 @@
-import glob
 import sys
 import os
 import importlib
 import json
-import urllib.request
 import fnmatch
-import importlib.util
 import tempfile
-import nputils
-from importlib.machinery import SourceFileLoader
+import __np__
 
 # Portability:
 if str is bytes:
@@ -17,6 +13,64 @@ if str is bytes:
     )
 else:
     from urllib.request import urlretrieve
+
+# For Nuitka utils source compatibility
+def _getPythonVersion():
+    big, major, minor = sys.version_info[0:3]
+
+    # TODO: Give up on decimal versions already.
+    return big * 256 + major * 16 + min(15, minor)
+
+python_version = _getPythonVersion()
+
+# Portability, lending an import code to module function from Nuitka.
+def importFileAsModule(filename):
+    """Import Python module given as a file name.
+
+    Notes:
+        Provides a Python version independent way to import any script files.
+
+    Args:
+        filename: complete path of a Python script
+
+    Returns:
+        Imported Python module with code from the filename.
+    """
+
+    def importFilePy2(filename):
+        """Import a file for Python version 2."""
+        import imp
+
+        basename = os.path.splitext(os.path.basename(filename))[0]
+        return imp.load_source(basename, filename)
+
+    def _importFilePy3OldWay(filename):
+        """Import a file for Python versions before 3.5."""
+        from importlib.machinery import (  # pylint: disable=I0021,import-error,no-name-in-module
+            SourceFileLoader,
+        )
+
+        # pylint: disable=I0021,deprecated-method
+        return SourceFileLoader(filename, filename).load_module(filename)
+
+    def _importFilePy3NewWay(filename):
+        """Import a file for Python versions 3.5+."""
+        import importlib.util  # pylint: disable=I0021,import-error,no-name-in-module
+
+        spec = importlib.util.spec_from_file_location(
+            os.path.basename(filename).split(".")[0], filename
+        )
+        user_plugin_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(user_plugin_module)
+        return user_plugin_module
+
+    if python_version < 0x300:
+        return importFilePy2(filename)
+    elif python_version < 0x350:
+        return _importFilePy3OldWay(filename)
+    else:
+        return _importFilePy3NewWay(filename)
+
 
 PACKAGE_BASE_URL = "https://raw.githubusercontent.com/Nuitka/Nuitka-Python-packages/master"
 #PACKAGE_BASE_URL = "file:///C:/src/Nuitka-Python-packages"
@@ -40,8 +94,8 @@ def install_build_tool(name):
         for tool in package_index['build_tools']:
             install_build_tool(tool)
 
-    if os.path.isfile(os.path.join(nputils.BUILD_TOOLS_INSTALL_DIR, name, 'version.txt')):
-        with open(os.path.join(nputils.BUILD_TOOLS_INSTALL_DIR, name, 'version.txt'), 'r') as f:
+    if os.path.isfile(os.path.join(__np__.BUILD_TOOLS_INSTALL_DIR, name, 'version.txt')):
+        with open(os.path.join(__np__.BUILD_TOOLS_INSTALL_DIR, name, 'version.txt'), 'r') as f:
             version = f.read()
             if version == package_index['version']:
                 print("Skipping installed build tool {name}.".format(**locals()))
@@ -56,13 +110,9 @@ def install_build_tool(name):
         build_script_module_name = "build_script{os.path.basename(temp_dir)}.{name}".format(**locals())
         initcwd = os.getcwd()
         initenviron = dict(os.environ)
+
+        build_script_module = importFileAsModule(os.path.join(temp_dir, package_index["build_script"]))
         try:
-            build_script_spec = importlib.util.spec_from_loader(
-                build_script_module_name,
-                importlib.machinery.SourceFileLoader(build_script_module_name, os.path.join(temp_dir, package_index["build_script"]))
-            )
-            build_script_module = importlib.util.module_from_spec(build_script_spec)
-            build_script_spec.loader.exec_module(build_script_module)
             build_script_module.run(temp_dir)
         finally:
             if build_script_module_name in sys.modules:
@@ -71,21 +121,17 @@ def install_build_tool(name):
                 del build_script_module
             except NameError:
                 pass
-            try:
-                del build_script_spec
-            except NameError:
-                pass
             os.chdir(initcwd)
             os.environ.clear()
             os.environ.update(initenviron)
 
-    with open(os.path.join(nputils.BUILD_TOOLS_INSTALL_DIR, name, 'version.txt'), 'w') as f:
+    with open(os.path.join(__np__.BUILD_TOOLS_INSTALL_DIR, name, 'version.txt'), 'w') as f:
         f.write(package_index["version"])
 
 
 def install_dependency(name):
     package_dir_url = "{PACKAGE_BASE_URL}/build_tools/{name}".format(PACKAGE_BASE_URL=PACKAGE_BASE_URL, **locals())
-    data = urllib.request.urlopen("{package_dir_url}/index.json".format(**locals())).read()
+    data = urlretrieve("{package_dir_url}/index.json".format(**locals()))
     package_index = json.loads(data)
     if 'build_tools' in package_index:
         for tool in package_index['build_tools']:
@@ -94,8 +140,8 @@ def install_dependency(name):
         for dep in package_index['dependencies']:
             install_dependency(dep)
 
-    if os.path.isfile(os.path.join(nputils.DEPENDENCY_INSTALL_DIR, name, 'version.txt')):
-        with open(os.path.join(nputils.DEPENDENCY_INSTALL_DIR, name, 'version.txt'), 'r') as f:
+    if os.path.isfile(os.path.join(__np__.DEPENDENCY_INSTALL_DIR, name, 'version.txt')):
+        with open(os.path.join(__np__.DEPENDENCY_INSTALL_DIR, name, 'version.txt'), 'r') as f:
             version = f.read()
             if version == package_index['version']:
                 print("Skipping installed dependency {name}.".format(**locals()))
@@ -110,13 +156,10 @@ def install_dependency(name):
         build_script_module_name = "build_script{os.path.basename(temp_dir)}.{name}".format(**locals())
         initcwd = os.getcwd()
         initenviron = dict(os.environ)
+
+        build_script_module = importFileAsModule(os.path.join(temp_dir, package_index["build_script"]))
+
         try:
-            build_script_spec = importlib.util.spec_from_loader(
-                build_script_module_name,
-                importlib.machinery.SourceFileLoader(build_script_module_name, os.path.join(temp_dir, package_index["build_script"]))
-            )
-            build_script_module = importlib.util.module_from_spec(build_script_spec)
-            build_script_spec.loader.exec_module(build_script_module)
             build_script_module.run(temp_dir)
         finally:
             if build_script_module_name in sys.modules:
@@ -125,15 +168,11 @@ def install_dependency(name):
                 del build_script_module
             except NameError:
                 pass
-            try:
-                del build_script_spec
-            except NameError:
-                pass
             os.chdir(initcwd)
             os.environ.clear()
             os.environ.update(initenviron)
 
-    with open(os.path.join(nputils.DEPENDENCY_INSTALL_DIR, name, 'version.txt'), 'w') as f:
+    with open(os.path.join(__np__.DEPENDENCY_INSTALL_DIR, name, 'version.txt'), 'w') as f:
         f.write(package_index["version"])
 
 
@@ -143,18 +182,18 @@ _InstallRequirement = pip._internal.req.req_install.InstallRequirement
 class InstallRequirement(_InstallRequirement):
     def install(
             self,
-            install_options,  # type: List[str]
-            global_options=None,  # type: Optional[Sequence[str]]
-            root=None,  # type: Optional[str]
-            home=None,  # type: Optional[str]
-            prefix=None,  # type: Optional[str]
-            warn_script_location=True,  # type: bool
-            use_user_site=False,  # type: bool
-            pycompile=True  # type: bool
+            install_options,
+            global_options=None,
+            root=None,
+            home=None,
+            prefix=None,
+            warn_script_location=True,
+            use_user_site=False,
+            pycompile=True
     ):
         try:
             package_dir_url = "{PACKAGE_BASE_URL}/build_tools/{name}".format(PACKAGE_BASE_URL=PACKAGE_BASE_URL, **locals())
-            data = urllib.request.urlopen("{package_dir_url}/index.json".format(**locals())).read()
+            data = urlretrieve("{package_dir_url}/index.json".format(**locals()))
             package_index = json.loads(data)
             matched_source = None
             for source in package_index["scripts"]:
@@ -179,27 +218,17 @@ class InstallRequirement(_InstallRequirement):
             for file in matched_source["files"]:
                 urlretrieve("{package_dir_url}/{file}".format(**locals()), os.path.join(install_temp_dir, file))
 
-
             build_script_module_name = "build_script{os.path.basename(install_temp_dir)}.{self.name}".format(**locals())
             initcwd = os.getcwd()
             initenviron = dict(os.environ)
+            build_script_module = importFileAsModule(os.path.join(install_temp_dir, matched_source["build_script"]))
             try:
-                build_script_spec = importlib.util.spec_from_loader(
-                    build_script_module_name,
-                    importlib.machinery.SourceFileLoader(build_script_module_name, os.path.join(install_temp_dir, matched_source["build_script"]))
-                )
-                build_script_module = importlib.util.module_from_spec(build_script_spec)
-                build_script_spec.loader.exec_module(build_script_module)
                 build_script_module.run(self, install_temp_dir, self.source_dir, install_options, global_options, root, home, prefix, warn_script_location, use_user_site, pycompile)
             finally:
                 if build_script_module_name in sys.modules:
                     del sys.modules[build_script_module_name]
                 try:
                     del build_script_module
-                except NameError:
-                    pass
-                try:
-                    del build_script_spec
                 except NameError:
                     pass
                 os.chdir(initcwd)

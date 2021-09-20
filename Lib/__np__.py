@@ -4,15 +4,14 @@ import sys
 import re
 import subprocess
 import tempfile
-import urllib.request
-import zipfile
+# import urllib.request
 import sysconfig
 import shutil
-import pathlib
+# import pathlib
 import contextlib
 
-from typing import *
-from types import ModuleType
+if str is not bytes:
+    from typing import *
 
 DEPENDENCY_INSTALL_DIR = os.path.join(sysconfig.get_config_var('prefix'), 'dependency_libs')
 BUILD_TOOLS_INSTALL_DIR = os.path.join(sysconfig.get_config_var('prefix'), 'build_tools')
