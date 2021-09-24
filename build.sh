@@ -47,4 +47,4 @@ mv Lib/__np__.py.bak Lib/pip.py
 
 # Make sure to have pip installed, might even remove it afterwards, Debian
 # e.g. doesn't include it.
-sudo $target/bin/python -m ensurepip
+sudo mv $target/lib/python2.7/pip.py $target/lib/python2.7/pip.py.bak && sudo $target/bin/python -m ensurepip && sudo mv $target/lib/python2.7/pip.py.bak $target/lib/python2.7/pip.py
