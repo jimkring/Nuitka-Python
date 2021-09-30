@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import glob
 import os
 import sys
@@ -188,3 +190,35 @@ def auto_patch_MD_MT(folder):
                     print("Fixed up file:", fpath)
                     with open(fpath, "w") as f:
                         f.write(s2)
+
+
+def auto_patch_Cython_memcpy(folder):
+    # TODO: Have a generic implementation, maybe in nuitka.utils for this
+    for dname, dirs, files in os.walk(folder):
+        for fname in files:
+            fpath = os.path.join(dname, fname)
+            if '.git' in fpath or '.svn' in fpath:
+                continue
+
+            # TODO: Probably unnecessary
+            if fname.endswith('.cc'):
+                with open(fpath, 'r') as f:
+                    s = f.read()
+                s2 = s.replace('"-Wl,-wrap,memcpy"',"")
+
+                if s != s2:
+                    print("Removed Cython config:", fpath)
+                    with open(fpath, "w") as f:
+                        f.write(s2)
+
+
+            if fname == "setup.py":
+                with open(fpath, 'r') as f:
+                    s = f.read()
+                s2 = s.replace("-Wl,-wrap,memcpy", "")
+
+                if s != s2:
+                    print("Removed memcpy wrapper config:", fpath)
+                    with open(fpath, "w") as f:
+                        f.write(s2)
+
