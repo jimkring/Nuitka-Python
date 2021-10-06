@@ -73,10 +73,22 @@ def importFileAsModule(filename):
         return _importFilePy3NewWay(filename)
 
 
-PACKAGE_BASE_URL = "https://raw.githubusercontent.com/Nuitka/Nuitka-Python-packages/master"
-#PACKAGE_BASE_URL = "file:///C:/src/Nuitka-Python-packages"
+PACKAGE_BASE_URL = os.environ.get("NUITKA_PYTHON_PACKAGE_URL", "https://raw.githubusercontent.com/Nuitka/Nuitka-Python-packages/master")
 
+def getPackageUrl(section, name):
+    if section == "packages":
+        if os.name == "nt":
+            if str is bytes:
+                section = "packages/np27-windows"
+            else:
+                section = "packages/np3-windows"
+        else:
+            if str is bytes:
+                section = "packages/np27-linux"
+            else:
+                section = "packages/np3-linux"
 
+    return "{PACKAGE_BASE_URL}/{section}/{name}".format(PACKAGE_BASE_URL=PACKAGE_BASE_URL, section=section, name=name)
 
 real_pip_dir = os.path.join(os.path.dirname(__file__), 'site-packages')
 sys.path.insert(0, real_pip_dir)
@@ -86,8 +98,6 @@ del sys.path[0]
 sys.modules['pip'] = _pip
 
 import pip._internal.req.req_install
-from pip._internal.cli.cmdoptions import make_target_python
-from pip._internal.utils.temp_dir import TempDirectory
 
 
 def install_build_tool(name):
@@ -134,7 +144,8 @@ def install_build_tool(name):
 
 
 def install_dependency(name):
-    package_dir_url = "{PACKAGE_BASE_URL}/build_tools/{name}".format(PACKAGE_BASE_URL=PACKAGE_BASE_URL, **locals())
+    package_dir_url = getPackageUrl(section="dependencies", name=name)
+
     data = urlretrieve("{package_dir_url}/index.json".format(**locals()))
     package_index = json.loads(data)
     if 'build_tools' in package_index:
@@ -194,16 +205,29 @@ class InstallRequirement(_InstallRequirement):
             use_user_site=False,
             pycompile=True
     ):
+        package_dir_url = getPackageUrl(section="packages", name=self.name)
 
-        package_dir_url = "{PACKAGE_BASE_URL}/build_tools/{self.name}".format(PACKAGE_BASE_URL=PACKAGE_BASE_URL, **locals())
-        data_filename, message = urlretrieve("{package_dir_url}/index.json".format(**locals()))
-        data = open(data_filename).read()
+        try:
+            fallback = False
+            data_filename, _message = urlretrieve("{package_dir_url}/index.json".format(**locals()))
 
-        if data.startswith("404:"):
-            # Fall back to using normal pip install.
+            with open(data_filename) as data_file:
+                line = data_file.readline()
+
+                if line.startswith("404:"):
+                    # Fall back to using normal pip install.
+                    fallback = True
+        except EnvironmentError:
+            fallback = True
+
+        if fallback:
+            print("FALLBACK for %s" % self.name)
+
             return _InstallRequirement.install(self, install_options, global_options, root, home, prefix, warn_script_location, use_user_site, pycompile)
 
-        package_index = json.loads(data_filename)
+        with open(data_filename) as data_file:
+            package_index = json.load(data_file)
+
         matched_source = None
         for source in package_index["scripts"]:
             matched_metadata = True
@@ -227,12 +251,17 @@ class InstallRequirement(_InstallRequirement):
         for file in matched_source["files"]:
             urlretrieve("{package_dir_url}/{file}".format(**locals()), os.path.join(install_temp_dir, file))
 
-        build_script_module_name = "build_script{os.path.basename(install_temp_dir)}.{self.name}".format(**locals())
+        build_script_module_name = "build_script_{uid}.{name}".format(
+            uid = os.path.basename(install_temp_dir),
+            name = self.name
+        )
+
         initcwd = os.getcwd()
         initenviron = dict(os.environ)
         build_script_module = importFileAsModule(os.path.join(install_temp_dir, matched_source["build_script"]))
+
         try:
-            build_script_module.run(self, install_temp_dir, self.source_dir, install_options, global_options, root, home, prefix, warn_script_location, use_user_site, pycompile)
+            result = build_script_module.run(self, install_temp_dir, self.source_dir, install_options, global_options, root, home, prefix, warn_script_location, use_user_site, pycompile)
         finally:
             if build_script_module_name in sys.modules:
                 del sys.modules[build_script_module_name]
@@ -243,6 +272,9 @@ class InstallRequirement(_InstallRequirement):
             os.chdir(initcwd)
             os.environ.clear()
             os.environ.update(initenviron)
+
+        if result:
+            return _InstallRequirement.install(self, install_options, global_options, root, home, prefix, warn_script_location, use_user_site, pycompile)
 
 
 pip._internal.req.req_install.InstallRequirement = InstallRequirement
