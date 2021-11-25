@@ -38,8 +38,7 @@ def importFileAsModule(modulename, filename):
         """Import a file for Python version 2."""
         import imp
 
-        basename = os.path.splitext(os.path.basename(filename))[0]
-        return imp.load_source(basename, filename)
+        return imp.load_source(modulename, filename)
 
     def _importFilePy3OldWay(modulename, filename):
         """Import a file for Python versions before 3.5."""
@@ -48,18 +47,18 @@ def importFileAsModule(modulename, filename):
         )
 
         # pylint: disable=I0021,deprecated-method
-        return SourceFileLoader(filename, filename).load_module(filename)
+        return SourceFileLoader(modulename, filename).load_module(modulename)
 
     def _importFilePy3NewWay(modulename, filename):
         """Import a file for Python versions 3.5+."""
         import importlib.util  # pylint: disable=I0021,import-error,no-name-in-module
 
-        spec = importlib.util.spec_from_file_location(
-            os.path.basename(filename).split(".")[0], filename
+        script_spec = importlib.util.spec_from_loader(
+            modulename,
+            importlib.machinery.SourceFileLoader(modulename, filename)
         )
-        user_plugin_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(user_plugin_module)
-        return user_plugin_module
+        script_module = importlib.util.module_from_spec(script_spec)
+        return script_module
 
     if python_version < 0x300:
         return _importFilePy2(modulename, filename)
