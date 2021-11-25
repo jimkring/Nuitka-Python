@@ -1,6 +1,5 @@
 import sys
 import os
-import importlib
 import json
 import fnmatch
 import tempfile
