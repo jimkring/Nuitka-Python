@@ -4,6 +4,19 @@ import json
 import fnmatch
 import __np__
 
+# Make the standard pip, the real pip module.
+# Need to keep a reference alive, or the module will loose all attributes.
+if "pip" in sys.modules:
+    this_module = sys.modules["pip"]
+    del sys.modules["pip"]
+
+real_pip_dir = os.path.join(os.path.dirname(__file__), 'site-packages')
+sys.path.insert(0, real_pip_dir)
+import pip as _pip
+del sys.path[0]
+
+sys.modules['pip'] = _pip
+
 def urlretrieve(url, output_filename):
     local_filename = __np__.download_file(url, os.path.dirname(output_filename))
 
@@ -86,22 +99,12 @@ def getPackageUrl(section, name):
     return "{PACKAGE_BASE_URL}/{section}/{name}".format(PACKAGE_BASE_URL=PACKAGE_BASE_URL, section=section, name=name)
 
 def getPackageJson(name):
-    package_dir_url = "{PACKAGE_BASE_URL}/build_tools/{name}".format(PACKAGE_BASE_URL=PACKAGE_BASE_URL, **locals())
+    package_dir_url = getPackageUrl("packages", name)
     with __np__.TemporaryDirectory() as temp_dir:
         data_filename = urlretrieve("{package_dir_url}/index.json".format(**locals()), os.path.join(temp_dir, "index.json"))
 
         with open(data_filename) as data_file:
             return json.loads(data_file.read())
-
-
-real_pip_dir = os.path.join(os.path.dirname(__file__), 'site-packages')
-sys.path.insert(0, real_pip_dir)
-import pip as _pip
-del sys.path[0]
-
-sys.modules['pip'] = _pip
-
-import pip._internal.req.req_install
 
 
 def install_build_tool(name):
@@ -173,7 +176,7 @@ def install_dependency(name):
         initcwd = os.getcwd()
         initenviron = dict(os.environ)
 
-        build_script_module = importFileAsModule(os.path.join(temp_dir, package_index["build_script"]))
+        build_script_module = importFileAsModule(build_script_module_name, os.path.join(temp_dir, package_index["build_script"]))
         try:
             build_script_module.run(temp_dir)
         finally:
@@ -191,6 +194,8 @@ def install_dependency(name):
         f.write(package_index["version"])
 
 
+import pip._internal.req.req_install
+
 _InstallRequirement = pip._internal.req.req_install.InstallRequirement
 
 
@@ -206,20 +211,15 @@ class InstallRequirement(_InstallRequirement):
             use_user_site=False,
             pycompile=True
     ):
+        fallback = False
+
         try:
-            fallback = False
-
-
-            try:
-                package_index = getPackageJson(self.name)
-            except __np__.NoSuchURL:
-                fallback = True
-
-        except EnvironmentError:
+            package_index = getPackageJson(self.name)
+        except __np__.NoSuchURL:
             fallback = True
 
         if fallback:
-            print("FALLBACK for %s" % self.name)
+            __np__.my_print("FALLBACK to standard install for %s" % self.name)
 
             return _InstallRequirement.install(self, install_options, global_options, root, home, prefix, warn_script_location, use_user_site, pycompile)
 
@@ -244,6 +244,7 @@ class InstallRequirement(_InstallRequirement):
                 install_dependency(dep)
 
         for file in matched_source["files"]:
+            package_dir_url = getPackageUrl("packages", self.name)
             urlretrieve("{package_dir_url}/{file}".format(**locals()), os.path.join(install_temp_dir, file))
 
         build_script_module_name = "build_script_{uid}.{name}".format(
@@ -253,7 +254,7 @@ class InstallRequirement(_InstallRequirement):
 
         initcwd = os.getcwd()
         initenviron = dict(os.environ)
-        build_script_module = importFileAsModule(os.path.join(install_temp_dir, matched_source["build_script"]))
+        build_script_module = importFileAsModule(build_script_module_name, os.path.join(install_temp_dir, matched_source["build_script"]))
 
         try:
             result = build_script_module.run(self, install_temp_dir, self.source_dir, install_options, global_options, root, home, prefix, warn_script_location, use_user_site, pycompile)

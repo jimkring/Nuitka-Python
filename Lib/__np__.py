@@ -120,6 +120,8 @@ def download_file(url, destination):
         from urllib.request import urlopen
 
     try:
+        my_print("Attempting to download '%s'." % url, style="blue")
+
         with contextlib.closing(urlopen(url)) as fp:
             if 'content-disposition' in fp.headers and 'filename=' in fp.headers['content-disposition']:
                 destination_file = os.path.join(destination, fp.headers['content-disposition'].split('filename=')[-1])
