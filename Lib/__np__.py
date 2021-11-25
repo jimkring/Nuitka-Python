@@ -6,32 +6,55 @@ import sys
 import re
 import subprocess
 import tempfile
-# import urllib.request
 import sysconfig
 import shutil
-# import pathlib
 import contextlib
 
 if str is not bytes:
     from typing import *
+    from types import ModuleType
 
 DEPENDENCY_INSTALL_DIR = os.path.join(sysconfig.get_config_var('prefix'), 'dependency_libs')
 BUILD_TOOLS_INSTALL_DIR = os.path.join(sysconfig.get_config_var('prefix'), 'build_tools')
 
+@contextlib.contextmanager
+def TemporaryDirectory():
+
+    dirpath = tempfile.mkdtemp()
+    yield dirpath
+    shutil.rmtree(dirpath)
+
+class NoSuchURL(Exception):
+    pass
 
 def download_file(url, destination) -> str:
-    with contextlib.closing(urllib.request.urlopen(url)) as fp:
-        if 'content-disposition' in fp.headers and 'filename=' in fp.headers['content-disposition']:
-            destination_file = os.path.join(destination, fp.headers['content-disposition'].split('filename=')[-1])
+    if str is bytes:
+        from urllib2 import urlopen, HTTPError
+    else:
+        from urllib.request import urlopen
+
+    try:
+        with contextlib.closing(urlopen(url)) as fp:
+            if 'content-disposition' in fp.headers and 'filename=' in fp.headers['content-disposition']:
+                destination_file = os.path.join(destination, fp.headers['content-disposition'].split('filename=')[-1])
+            else:
+                destination_file = os.path.join(destination, os.path.basename(url))
+
+            with open(destination_file, 'wb') as out_file:
+                bs = 1024*8
+                while True:
+                    block = fp.read(bs)
+                    if not block:
+                        break
+                    out_file.write(block)
+
+    except HTTPError as e:
+        if e.code == 404:
+            raise NoSuchURL
         else:
-            destination_file = os.path.join(destination, pathlib.Path(fp.url).name)
-        with open(destination_file, 'wb') as out_file:
-            bs = 1024*8
-            while True:
-                block = fp.read(bs)
-                if not block:
-                    break
-                out_file.write(block)
+            raise
+
+
     return destination_file
 
 
@@ -45,7 +68,7 @@ def extract_archive(archive_file: str, destination=None) -> str:
 
 
 def download_extract(url: str, destination: str):
-    with tempfile.TemporaryDirectory() as dir:
+    with TemporaryDirectory() as dir:
         downloaded_file = download_file(url, dir)
         extract_archive(downloaded_file, destination)
 
