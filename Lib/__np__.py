@@ -27,7 +27,7 @@ def TemporaryDirectory():
 class NoSuchURL(Exception):
     pass
 
-def download_file(url, destination) -> str:
+def download_file(url, destination):
     if str is bytes:
         from urllib2 import urlopen, HTTPError
     else:
@@ -58,7 +58,7 @@ def download_file(url, destination) -> str:
     return destination_file
 
 
-def extract_archive(archive_file: str, destination=None) -> str:
+def extract_archive(archive_file, destination=None):
     if destination is None:
         destination = os.path.splitext(archive_file)[0]
         if destination.endswith('.tar'):
@@ -67,30 +67,30 @@ def extract_archive(archive_file: str, destination=None) -> str:
     return destination
 
 
-def download_extract(url: str, destination: str):
+def download_extract(url, destination):
     with TemporaryDirectory() as dir:
         downloaded_file = download_file(url, dir)
         extract_archive(downloaded_file, destination)
 
 
-def get_compiler_module() -> ModuleType:
+def get_compiler_module():
     __import__("distutils._msvccompiler")
     return sys.modules["distutils._msvccompiler"]
 
 
-def get_vs_version() -> float:
+def get_vs_version():
     compiler_module = get_compiler_module()
     platform = compiler_module.get_platform()
     vc_env = compiler_module._get_vc_env(compiler_module.PLAT_TO_VCVARS[platform])
     return float(vc_env.get('visualstudioversion'))
 
 
-def get_platform() -> str:
+def get_platform():
     compiler_module = get_compiler_module()
     return compiler_module.get_platform()
 
 
-def find_compiler_exe(exe: str) -> Type:
+def find_compiler_exe(exe):
     compiler_module = get_compiler_module()
     platform = compiler_module.get_platform()
     vc_env = compiler_module._get_vc_env(compiler_module.PLAT_TO_VCVARS[platform])
@@ -105,7 +105,7 @@ def setup_compiler_env():
     os.environ.update(vc_env)
 
 
-def run_with_output(*args: str) -> str:
+def run_with_output(*args):
     p = subprocess.Popen(args, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     output = ""
     for line in p.stdout:
@@ -118,19 +118,19 @@ def run_with_output(*args: str) -> str:
     return output
 
 
-def run_compiler_exe(exe: str, *args: str):
+def run_compiler_exe(exe, *args):
     return run_with_output(find_compiler_exe(exe), *args)
 
 
-def msbuild(*args: str) -> str:
+def msbuild(*args):
     return run_compiler_exe("msbuild.exe", *args)
 
 
-def nmake(*args: str) -> str:
+def nmake(*args):
     return run_compiler_exe("nmake.exe", *args)
 
 
-def install_files(dst: str, *files: str):
+def install_files(dst, *files):
     if not os.path.isdir(dst):
         os.makedirs(dst, exist_ok=True)
     for file_glob in files:
@@ -141,38 +141,38 @@ def install_files(dst: str, *files: str):
                 shutil.copy(file, os.path.join(dst, os.path.basename(file)))
 
 
-def install_dep_include(dependency_name: str, *files: str):
+def install_dep_include(dependency_name, *files):
     dependency_location = os.path.join(DEPENDENCY_INSTALL_DIR, dependency_name, 'include')
     install_files(dependency_location, *files)
 
 
-def install_dep_libs(dependency_name: str, *files: str):
+def install_dep_libs(dependency_name, *files):
     dependency_location = os.path.join(DEPENDENCY_INSTALL_DIR, dependency_name, 'libs')
     install_files(dependency_location, *files)
 
 
-def install_build_tool(tool_name: str, *files: str):
+def install_build_tool(tool_name, *files):
     dependency_location = os.path.join(BUILD_TOOLS_INSTALL_DIR, tool_name)
     install_files(dependency_location, *files)
 
 
-def find_build_tool_exe(tool_name: str, exe: str) -> str:
+def find_build_tool_exe(tool_name, exe):
     return glob.glob(os.path.join(BUILD_TOOLS_INSTALL_DIR, tool_name, exe))[0]
 
 
-def run_build_tool_exe(tool_name: str, exe: str, *args: str) -> str:
+def run_build_tool_exe(tool_name, exe, *args):
     return run_with_output(find_build_tool_exe(tool_name, exe), *args)
 
 
-def find_dep_include(dep_name: str) -> str:
+def find_dep_include(dep_name):
     return os.path.join(DEPENDENCY_INSTALL_DIR, dep_name, 'include')
 
 
-def find_dep_libs(dep_name: str) -> str:
+def find_dep_libs(dep_name):
     return os.path.join(DEPENDENCY_INSTALL_DIR, dep_name, 'libs')
 
 
-def prepend_to_file(file: str, prepend_str: str):
+def prepend_to_file(file, prepend_str):
     output = prepend_str
     with open(file, 'r') as f:
         output += f.read()
@@ -180,7 +180,7 @@ def prepend_to_file(file: str, prepend_str: str):
         f.write(output)
 
 
-def is_file_binary(file_path: str) -> bool:
+def is_file_binary(file_path):
     textchars = bytearray({7,8,9,10,12,13,27} | set(range(0x20, 0x100)) - {0x7f})
     with open(file_path, 'rb') as f:
         return bool(f.read(1024).translate(None, textchars))

@@ -8,13 +8,6 @@ set -x
 sudo apt-get update
 sudo apt-get install -y build-essential checkinstall libreadline-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev
 
-# Our own build dependency, 3to2, so we can use annotations in the pip wrapper
-# source backport.
-python -m pip install 3to2
-
-3to2 -f annotations -w Lib/pip.py
-3to2 -f annotations -w Lib/__np__.py
-
 # Have this as a standard path. We are not yet relocatable, but that will come hopefully.
 target=/opt/nuitka-python27
 
@@ -41,9 +34,6 @@ make build_all_merge_profile
 # Delayed deletion of old installation, to avoid having it not there for testing purposes
 # while compiling, which is slow due to PGO beign applied.
 sudo rm -rf $target && sudo make install
-
-# mv Lib/pip.py.bak Lib/pip.py
-mv Lib/__np__.py.bak Lib/pip.py
 
 # Make sure to have pip installed, might even remove it afterwards, Debian
 # e.g. doesn't include it.
