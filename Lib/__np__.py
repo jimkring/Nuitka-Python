@@ -117,7 +117,7 @@ def download_file(url, destination):
     if str is bytes:
         from urllib2 import urlopen, HTTPError
     else:
-        from urllib.request import urlopen
+        from urllib.request import urlopen, HTTPError
 
     try:
         my_print("Attempting to download '%s'." % url, style="blue")
@@ -126,7 +126,11 @@ def download_file(url, destination):
             if 'content-disposition' in fp.headers and 'filename=' in fp.headers['content-disposition']:
                 destination_file = os.path.join(destination, fp.headers['content-disposition'].split('filename=')[-1])
             else:
-                destination_file = os.path.join(destination, os.path.basename(url))
+                destination_file = os.path.join(destination, os.path.basename(fp.geturl()))
+
+            parent_dir = os.path.dirname(destination_file)
+            if not os.path.exists(parent_dir):
+                os.makedirs(parent_dir)
 
             with open(destination_file, 'wb') as out_file:
                 bs = 1024*8
@@ -141,7 +145,6 @@ def download_file(url, destination):
             raise NoSuchURL
         else:
             raise
-
 
     return destination_file
 
