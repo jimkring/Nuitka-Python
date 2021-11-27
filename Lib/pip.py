@@ -53,7 +53,11 @@ def importFileAsModule(modulename, filename):
         """Import a file for Python version 2."""
         import imp
 
-        return imp.load_source(modulename, filename)
+        result = imp.load_source(modulename, filename)
+
+        # Otherwise there are warnings, when this one imports others.
+        result.__file__ = filename
+        return result
 
     def _importFilePy3OldWay(modulename, filename):
         """Import a file for Python versions before 3.5."""
