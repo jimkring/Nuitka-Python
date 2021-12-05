@@ -3,6 +3,7 @@ import os
 import json
 import fnmatch
 import __np__
+import sysconfig
 
 # Make the standard pip, the real pip module.
 # Need to keep a reference alive, or the module will loose all attributes.
@@ -292,5 +293,15 @@ if __name__ == "__main__":
         "ignore", category=DeprecationWarning, module=".*packaging\\.version"
     )
     from pip._internal.cli.main import main as _main
+
+    cc_config_var = sysconfig.get_config_var("CC")
+    if "CC" in os.environ:
+        print("Overrding CC variable to Nuitka-Python used '%s' ..." % cc_config_var)
+    os.environ["CC"] = cc_config_var
+
+    cxx_config_var = sysconfig.get_config_var("CXX")
+    if "CXX" in os.environ:
+        print("Overrding CXX variable to Nuitka-Python used '%s' ..." % cxx_config_var)
+    os.environ["CXX"] = cxx_config_var
 
     sys.exit(_main())
