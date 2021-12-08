@@ -116,6 +116,9 @@ def getPackageJson(section, name):
             return json.loads(data_file.read())
 
 
+def getBuildScriptName(dir_name, name):
+    return "build_script_" + os.path.basename(dir_name).replace("-", "_") + "_" + name
+
 def install_build_tool(name):
     package_index = getPackageJson("build_tools", name)
     package_dir_url = getPackageUrl("build_tools", name)
@@ -137,7 +140,7 @@ def install_build_tool(name):
         for file in package_index["files"]:
             urlretrieve("{package_dir_url}/{file}".format(**locals()), os.path.join(temp_dir, file))
 
-        build_script_module_name = "build_script_" + os.path.basename(temp_dir).replace("-", "_") + "_" + name
+        build_script_module_name = getBuildScriptName(temp_dir, name)
         initcwd = os.getcwd()
         initenviron = dict(os.environ)
 
@@ -183,7 +186,7 @@ def install_dependency(name):
         for file in package_index["files"]:
             urlretrieve("{package_dir_url}/{file}".format(**locals()), os.path.join(temp_dir, file))
 
-        build_script_module_name = "build_script_" + os.path.basename(temp_dir) + "_" + name
+        build_script_module_name = getBuildScriptName(temp_dir, name)
         initcwd = os.getcwd()
         initenviron = dict(os.environ)
 
@@ -257,10 +260,7 @@ class InstallRequirement(_InstallRequirement):
             package_dir_url = getPackageUrl("packages", self.name)
             urlretrieve("{package_dir_url}/{file}".format(**locals()), os.path.join(install_temp_dir, file))
 
-        build_script_module_name = "build_script_{uid}.{name}".format(
-            uid = os.path.basename(install_temp_dir),
-            name = self.name
-        )
+        build_script_module_name = getBuildScriptName(install_temp_dir, self.name)
 
         initcwd = os.getcwd()
         initenviron = dict(os.environ)
