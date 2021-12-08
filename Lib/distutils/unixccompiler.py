@@ -285,6 +285,7 @@ class UnixCCompiler(CCompiler):
             dylib = os.path.join(dir, dylib_f)
             static = os.path.join(dir, static_f)
             xcode_stub = os.path.join(dir, xcode_stub_f)
+            original = os.path.join(dir, lib)
 
             if sys.platform == 'darwin' and (
                 dir.startswith('/System/') or (
@@ -307,6 +308,8 @@ class UnixCCompiler(CCompiler):
                 return shared
             elif os.path.exists(static):
                 return static
+            elif os.path.exists(original):
+                return original
 
         # Oops, didn't find it in *any* of 'dirs'
         return None

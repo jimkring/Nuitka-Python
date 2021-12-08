@@ -8,7 +8,7 @@ extensions ASAP)."""
 
 __revision__ = "$Id$"
 
-import sys, os, string, re
+import sys, os, string, re, json
 from types import *
 from site import USER_BASE, USER_SITE
 from distutils.core import Command
@@ -519,16 +519,20 @@ class build_ext (Command):
         # Detect target language, if not provided
         language = ext.language or self.compiler.detect_language(sources)
 
-        self.compiler.link_shared_object(
+        self.compiler.create_static_lib(
             objects, ext_path,
-            libraries=self.get_libraries(ext),
-            library_dirs=ext.library_dirs,
-            runtime_library_dirs=ext.runtime_library_dirs,
-            extra_postargs=extra_args,
-            export_symbols=self.get_export_symbols(ext),
+            output_dir=os.path.abspath("."),
             debug=self.debug,
-            build_temp=self.build_temp,
             target_lang=language)
+
+        result_path = self.compiler.library_filename(ext_path, output_dir=os.path.abspath("."))
+
+        with open(result_path + '.link.json', 'w') as f:
+            json.dump({
+                'libraries': self.get_libraries(ext),
+                'library_dirs': ext.library_dirs,
+                'runtime_library_dirs': ext.runtime_library_dirs,
+                'extra_postargs': extra_args}, f)
 
 
     def swig_sources (self, sources, extension):
