@@ -165,8 +165,10 @@ def download_extract(url, destination):
 
 
 def get_compiler_module():
-    __import__("distutils._msvccompiler")
-    return sys.modules["distutils._msvccompiler"]
+    compile_module_name = "distutils._msvccompiler" if os.name == "nt" else "distutils.unixccompiler"
+
+    __import__(compile_module_name)
+    return sys.modules[compile_module_name]
 
 
 def get_vs_version():
@@ -191,9 +193,11 @@ def find_compiler_exe(exe):
 
 def setup_compiler_env():
     compiler_module = get_compiler_module()
-    platform = compiler_module.get_platform()
-    vc_env = compiler_module._get_vc_env(compiler_module.PLAT_TO_VCVARS[platform])
-    os.environ.update(vc_env)
+
+    if os.name == "nt":
+        platform = compiler_module.get_platform()
+        vc_env = compiler_module._get_vc_env(compiler_module.PLAT_TO_VCVARS[platform])
+        os.environ.update(vc_env)
 
 
 def run_with_output(*args):
@@ -248,7 +252,10 @@ def install_build_tool(tool_name, *files):
 
 
 def find_build_tool_exe(tool_name, exe):
-    return glob.glob(os.path.join(BUILD_TOOLS_INSTALL_DIR, tool_name, exe))[0]
+    if os.name == "nt":
+        return glob.glob(os.path.join(BUILD_TOOLS_INSTALL_DIR, tool_name, exe))[0]
+    else:
+        return tool_name
 
 
 def run_build_tool_exe(tool_name, exe, *args):
