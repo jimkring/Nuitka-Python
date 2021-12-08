@@ -87,3 +87,5 @@ coverage/
 externals/
 htmlcov/
 gmon.out
+conftest*
+confdef*
