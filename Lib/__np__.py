@@ -200,8 +200,12 @@ def setup_compiler_env():
         os.environ.update(vc_env)
 
 
-def run_with_output(*args):
-    p = subprocess.Popen(args, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+def run_with_output(*args, **kwargs):
+    stdin = kwargs.pop("stdin", None)
+    assert not kwargs
+
+    p = subprocess.Popen(args, universal_newlines=True, stdin=stdin, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
     output = ""
     for line in p.stdout:
         sys.stdout.write(line)
@@ -258,9 +262,14 @@ def find_build_tool_exe(tool_name, exe):
         return tool_name
 
 
-def run_build_tool_exe(tool_name, exe, *args):
-    return run_with_output(find_build_tool_exe(tool_name, exe), *args)
+def run_build_tool_exe(tool_name, exe, *args, **kwargs):
+    return run_with_output(find_build_tool_exe(tool_name, exe), *args, **kwargs)
 
+
+def apply_patch(patch_file, directory):
+    """ Apply a patch file to a directory. """
+    with open(patch_file, "rb") as stdin:
+        run_build_tool_exe("patch", "patch.exe" if os.name=="nt" else "patch", "-d", directory, "-p", "1", stdin=stdin)
 
 def find_dep_include(dep_name):
     return os.path.join(DEPENDENCY_INSTALL_DIR, dep_name, 'include')
