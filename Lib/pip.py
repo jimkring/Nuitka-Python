@@ -265,6 +265,13 @@ class InstallRequirement(_InstallRequirement):
         initenviron = dict(os.environ)
         build_script_module = importFileAsModule(build_script_module_name, os.path.join(install_temp_dir, matched_source["build_script"]))
 
+        static_pattern = matched_source.get("static_pattern")
+        if static_pattern is None and os.name == "nt":
+            static_pattern = "*"
+
+        # Put to empty, to avoid need to remove it and for easier manual usage.
+        os.environ["NUITKA_PYTHON_STATIC_PATTERN"] = static_pattern or ""
+
         try:
             result = build_script_module.run(self, install_temp_dir, self.source_dir, install_options, global_options, root, home, prefix, warn_script_location, use_user_site, pycompile)
         finally:
