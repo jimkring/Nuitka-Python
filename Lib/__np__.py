@@ -142,7 +142,7 @@ def download_file(url, destination):
 
     except HTTPError as e:
         if e.code == 404:
-            raise NoSuchURL
+            raise NoSuchURL(url)
         else:
             raise
 
