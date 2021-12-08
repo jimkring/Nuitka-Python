@@ -238,6 +238,7 @@ class InstallRequirement(_InstallRequirement):
             for key, value_glob in source["metadata"].items():
                 if not fnmatch.fnmatch(self.metadata[key], value_glob):
                     matched_metadata = False
+                    break
             if matched_metadata:
                 matched_source = source
                 break
