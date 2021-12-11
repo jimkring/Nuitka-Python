@@ -37,6 +37,44 @@ The ``output`` folder can be moved freely, even to other machines. When you
 install via ``python.exe -m pip`` however, it will be self-modifying the
 ``python.exe`` to include the newly installed packages with static linking.
 
+Developer Information
+=====================
+
+This is for users, who want to contribute a package patch. Right now,
+this is a scratchpad of commands used to do that.
+
+.. code:: sh
+
+    # Tool to do the download, so far it didn't matter which python
+    # we are using for these commands, I was doing it for 2.7 with
+    # no issue for numpy. The tool may not support it anymore though.
+    python3.9 -m pip install pip-download
+
+    # Important to use "--no-binary=:all:" as we do not want wheels,
+    # but source code. Nuitka-Python doesn't yet enforce this, but
+    # it might one day. Notice, that "--no-deps" seems to not avoid
+    # installation of the requirements.
+    python3.9 -m pip download --no-binary=:all: --no-deps numpy==1.16.1
+
+    # apt-get install atool if need be
+    atool -x numpy-1.16.1.zip
+
+    # Now enter, and immediately put everything under git control, we
+    # of course have to ignore .gitignore files, therefore "-f" when
+    # adding things. This git repo will not be long lived though, we
+    # will only create a patch out of it.
+    cd numpy-1.16.1
+    git init -b nuitka-python && git add -f . && git commit -m "Upstream Source"
+
+    # If there is a pre-existing patch, apply it. The patch name should
+    # follow some consistency, but currently does not.
+    patch -p1 <../../repos/Nuitka-Python-packages/packages/np27-linux/numpy/numpy-static-patch.patch
+
+    # Now edit, make sure to only have one commit, amend or rebase if necessary against --root
+    # and squash all commits into one.
+    git commit -m "Nuitka-Python changes to allow static linking." -a
+
+    git format-patch HEAD^ --stdout >../../repos/Nuitka-Python-packages/packages/np27-linux/numpy/numpy-static-patch.patch
 
 Copyright and License Information
 ---------------------------------
