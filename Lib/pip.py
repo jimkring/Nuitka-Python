@@ -237,11 +237,13 @@ class InstallRequirement(_InstallRequirement):
 
         matched_source = None
         for source in package_index["scripts"]:
-            matched_metadata = True
             for key, value_glob in source["metadata"].items():
                 if not fnmatch.fnmatch(self.metadata[key], value_glob):
                     matched_metadata = False
                     break
+            else:
+                matched_metadata = True
+
             if matched_metadata:
                 matched_source = source
                 break
