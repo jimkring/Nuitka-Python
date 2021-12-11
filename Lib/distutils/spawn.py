@@ -10,6 +10,7 @@ __revision__ = "$Id$"
 
 import sys
 import os
+import __np__
 
 from distutils.errors import DistutilsPlatformError, DistutilsExecError
 from distutils.debug import DEBUG
@@ -31,6 +32,7 @@ def spawn(cmd, search_path=1, verbose=0, dry_run=0):
     Raise DistutilsExecError if running the program fails in any way; just
     return on success.
     """
+    __np__.my_print(str(cmd), style="pink")
     # cmd is documented as a list, but just in case some code passes a tuple
     # in, protect our %-formatting code against horrible death
     cmd = list(cmd)
