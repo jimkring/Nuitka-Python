@@ -4,16 +4,16 @@ import glob
 import os
 import sys
 import re
-import subprocess
-import tempfile
-import sysconfig
 import shutil
-import fnmatch
-import json
 import contextlib
 
-DEPENDENCY_INSTALL_DIR = os.path.join(sysconfig.get_config_var('prefix'), 'dependency_libs')
-BUILD_TOOLS_INSTALL_DIR = os.path.join(sysconfig.get_config_var('prefix'), 'build_tools')
+def getDependencyInstallDir():
+    import sysconfig
+    return os.path.join(sysconfig.get_config_var('prefix'), 'dependency_libs')
+
+def getToolsInstallDir():
+    import sysconfig
+    return os.path.join(sysconfig.get_config_var('prefix'), 'build_tools')
 
 def getEnableStyleCode(style):
     if style == "pink":
@@ -103,6 +103,7 @@ def my_print(*args, **kwargs):
 
 @contextlib.contextmanager
 def TemporaryDirectory():
+    import tempfile
 
     dirpath = tempfile.mkdtemp()
     yield dirpath
@@ -199,6 +200,8 @@ def setup_compiler_env():
 
 
 def run_with_output(*args, **kwargs):
+    import subprocess
+
     stdin = kwargs.pop("stdin", None)
     assert not kwargs
 
@@ -239,17 +242,17 @@ def install_files(dst, *files):
 
 
 def install_dep_include(dependency_name, *files):
-    dependency_location = os.path.join(DEPENDENCY_INSTALL_DIR, dependency_name, 'include')
+    dependency_location = os.path.join(getDependencyInstallDir(), dependency_name, 'include')
     install_files(dependency_location, *files)
 
 
 def install_dep_libs(dependency_name, *files):
-    dependency_location = os.path.join(DEPENDENCY_INSTALL_DIR, dependency_name, 'libs')
+    dependency_location = os.path.join(getDependencyInstallDir(), dependency_name, 'libs')
     install_files(dependency_location, *files)
 
 
 def install_build_tool(tool_name, *files):
-    dependency_location = os.path.join(BUILD_TOOLS_INSTALL_DIR, tool_name)
+    dependency_location = os.path.join(getToolsInstallDir(), tool_name)
     install_files(dependency_location, *files)
 
 
@@ -270,11 +273,11 @@ def apply_patch(patch_file, directory):
         run_build_tool_exe("patch", "patch.exe" if os.name=="nt" else "patch", "-d", directory, "-p", "1", stdin=stdin)
 
 def find_dep_include(dep_name):
-    return os.path.join(DEPENDENCY_INSTALL_DIR, dep_name, 'include')
+    return os.path.join(getDependencyInstallDir(), dep_name, 'include')
 
 
 def find_dep_libs(dep_name):
-    return os.path.join(DEPENDENCY_INSTALL_DIR, dep_name, 'libs')
+    return os.path.join(getDependencyInstallDir(), dep_name, 'libs')
 
 
 def prepend_to_file(file, prepend_str):
@@ -352,6 +355,8 @@ def auto_patch_Cython_memcpy(folder):
 
 
 def shall_link_statically(name):
+    import fnmatch
+
     static_pattern = os.environ.get("NUITKA_PYTHON_STATIC_PATTERN")
     if not static_pattern or not fnmatch.fnmatch(name, static_pattern):
         return False
@@ -359,6 +364,8 @@ def shall_link_statically(name):
     return True
 
 def write_linker_json(result_path, libraries, library_dirs, runtime_library_dirs, extra_args):
+    import json
+
     with open(result_path + '.link.json', 'w') as f:
         json.dump({
             'libraries': libraries,

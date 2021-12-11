@@ -173,8 +173,8 @@ def install_dependency(name):
         for dep in package_index['dependencies']:
             install_dependency(dep)
 
-    if os.path.isfile(os.path.join(__np__.DEPENDENCY_INSTALL_DIR, name, 'version.txt')):
-        with open(os.path.join(__np__.DEPENDENCY_INSTALL_DIR, name, 'version.txt'), 'r') as f:
+    if os.path.isfile(os.path.join(__np__.getDependencyInstallDir(), name, 'version.txt')):
+        with open(os.path.join(__np__.getDependencyInstallDir(), name, 'version.txt'), 'r') as f:
             version = f.read()
             if version == package_index['version']:
                 print("Skipping installed dependency {name}.".format(**locals()))
@@ -204,7 +204,7 @@ def install_dependency(name):
             os.environ.clear()
             os.environ.update(initenviron)
 
-    with open(os.path.join(__np__.DEPENDENCY_INSTALL_DIR, name, 'version.txt'), 'w') as f:
+    with open(os.path.join(__np__.getDependencyInstallDir(), name, 'version.txt'), 'w') as f:
         f.write(package_index["version"])
 
 
