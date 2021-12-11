@@ -8,11 +8,9 @@ import subprocess
 import tempfile
 import sysconfig
 import shutil
+import fnmatch
+import json
 import contextlib
-
-if str is not bytes:
-    from typing import *
-    from types import ModuleType
 
 DEPENDENCY_INSTALL_DIR = os.path.join(sysconfig.get_config_var('prefix'), 'dependency_libs')
 BUILD_TOOLS_INSTALL_DIR = os.path.join(sysconfig.get_config_var('prefix'), 'build_tools')
@@ -352,3 +350,18 @@ def auto_patch_Cython_memcpy(folder):
                     with open(fpath, "w") as f:
                         f.write(s2)
 
+
+def shall_link_statically(name):
+    static_pattern = os.environ.get("NUITKA_PYTHON_STATIC_PATTERN")
+    if not static_pattern or not fnmatch.fnmatch(name, static_pattern):
+        return False
+
+    return True
+
+def write_linker_json(result_path, libraries, library_dirs, runtime_library_dirs, extra_args):
+    with open(result_path + '.link.json', 'w') as f:
+        json.dump({
+            'libraries': libraries,
+            'library_dirs': library_dirs,
+            'runtime_library_dirs': runtime_library_dirs,
+            'extra_postargs': extra_args}, f)
