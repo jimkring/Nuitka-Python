@@ -1,19 +1,14 @@
 from __future__ import print_function
 
-import io
 import sys
 import os
-import pkgutil
 import shutil
 import subprocess
 import distutils
 import distutils.ccompiler
-import modulefinder
-from distutils.sysconfig import get_config_var
 import sysconfig
 import json
 import tempfile
-import ctypes
 import copy
 import fnmatch
 
