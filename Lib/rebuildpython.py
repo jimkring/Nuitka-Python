@@ -72,25 +72,25 @@ def run_rebuild():
     print('Scanning for any additional libs to link...')
 
     # Start with the libs needed for a base interpreter.
-    linkLibs = ['m']  #['advapi32', 'shell32', 'ole32', 'oleaut32', 'kernel32', 'user32', 'gdi32', 'winspool', 'comdlg32', 'uuid', 'odbc32', 'odbccp32', 'shlwapi', 'ws2_32', 'version', 'libssl', 'libcrypto', 'tcl86t', 'tk86t', 'Crypt32', 'Iphlpapi', 'msi', 'Rpcrt4', 'Cabinet', 'winmm']
+    link_libs = ['m']
 
     library_dirs = [sysconfig.get_config_var('prefix'), sysconfig.get_config_var('LIBDEST')]
 
     # Scrape all available libs from the libs directory. We will let the linker worry about filtering out extra symbols.
     for file in find_files(sysconfig.get_config_var('LIBDEST'), '*.a'):
-        linkLibs.append(file)
+        link_libs.append(file)
 
     for _name, path in foundLibs.items():
-        linkLibs += [path]
+        link_libs += [path]
 
         if os.path.isfile(path + '.link.json'):
             with open(path + '.link.json', 'r') as f:
                 linkData = json.load(f)
                 print(linkData)
-                linkLibs += linkData['libraries']
+                link_libs += linkData['libraries']
                 library_dirs += [os.path.join(os.path.dirname(path), x) for x in linkData['library_dirs']]
 
-    linkLibs = list(set(linkLibs))
+    link_libs = list(set(link_libs))
     library_dirs = list(set(library_dirs))
 
     print("Generating interpreter sources...")
@@ -169,16 +169,23 @@ main(int argc, char **argv)
 
     compiler.compile(["python.c"], output_dir=build_dir, include_dirs=include_dirs, macros=macros)
 
-    compiler.link_executable([os.path.join(build_dir, 'python.o')], 'python', output_dir=build_dir, libraries=linkLibs, library_dirs=library_dirs, extra_postargs=["-lm", "-pthread", "-lopenblas", "-lutil", "-ldl"])
+    compiler.link_executable(
+        objects = [os.path.join(build_dir, 'python.o')],
+        output_progname='python',
+        output_dir=build_dir,
+        libraries=link_libs,
+        library_dirs=library_dirs,
+        extra_postargs=["-lm", "-pthread", "-lutil", "-ldl"] + sysconfig.get_config_var("LDFLAGS").split() + sysconfig.get_config_var("CFLAGS").split()
+    )
 
-    # Replace running interpreter by moving current version to a temp file, then marking it for deletion.
+    # Replace running interpreter by moving current version to a temp file, then deleting it. This
+    # is to avoid Windows locks
     interpreter_path = sys.executable
-    tmp = tempfile.NamedTemporaryFile(delete=False)
+    tmp = tempfile.NamedTemporaryFile(delete=False, dir=os.path.dirname(sys.executable))
     tmp.close()
     os.unlink(tmp.name)
     os.rename(sys.executable, tmp.name)
     os.unlink(tmp.name)
-    #ctypes.windll.kernel32.MoveFileExW(tmp.name, None, MOVEFILE_DELAY_UNTIL_REBOOT)
 
     os.rename(os.path.join(build_dir, 'python'), interpreter_path)
 
@@ -186,7 +193,7 @@ main(int argc, char **argv)
         json.dump({
             'include_dirs': include_dirs,
             'macros': macros,
-            'libraries': linkLibs,
+            'libraries': link_libs,
             'library_dirs': library_dirs
         }, f)
 
