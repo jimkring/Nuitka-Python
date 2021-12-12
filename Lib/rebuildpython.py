@@ -9,7 +9,6 @@ import distutils.ccompiler
 import sysconfig
 import json
 import tempfile
-import copy
 import fnmatch
 
 MOVEFILE_DELAY_UNTIL_REBOOT = 4
@@ -22,15 +21,23 @@ def find_files(directory, pattern):
                 yield filename
 
 def run_rebuild():
-    initial_sys_path = copy.deepcopy(sys.path)
-
     installDir = os.path.dirname(sys.executable)
 
-    foundLibs = {}
+    # Make sure we have the same compiler as used originally.
+    cc_config_var = sysconfig.get_config_var("CC").split()[0]
+    if "CC" in os.environ and os.environ["CC"] != cc_config_var:
+        print("Overriding CC variable to Nuitka-Python used '%s' ..." % cc_config_var)
+    os.environ["CC"] = cc_config_var
+
+    cxx_config_var = sysconfig.get_config_var("CXX").split()[0]
+    if "CXX" in os.environ and os.environ["CXX"] != cxx_config_var:
+        print("Overriding CXX variable to Nuitka-Python used '%s' ..." % cxx_config_var)
+    os.environ["CXX"] = cxx_config_var
 
     compiler = distutils.ccompiler.new_compiler(verbose=5)
     #compiler.initialize()
 
+    foundLibs = {}
     checkedLibs = set()
 
     # Scan sys.path for any more lingering static libs.
@@ -73,7 +80,7 @@ def run_rebuild():
     for file in find_files(sysconfig.get_config_var('LIBDEST'), '*.a'):
         linkLibs.append(file)
 
-    for name, path in foundLibs.items():
+    for _name, path in foundLibs.items():
         linkLibs += [path]
 
         if os.path.isfile(path + '.link.json'):
@@ -182,8 +189,6 @@ main(int argc, char **argv)
             'libraries': linkLibs,
             'library_dirs': library_dirs
         }, f)
-
-    sys.path = initial_sys_path
 
 
 if __name__ == '__main__':

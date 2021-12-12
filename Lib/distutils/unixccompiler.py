@@ -68,6 +68,13 @@ class UnixCCompiler(CCompiler):
     if sys.platform[:6] == "darwin":
         executables['ranlib'] = ["ranlib"]
 
+    # Nuitka: Make sure to use the original settings
+    executables["compiler"] = os.environ["CC"]
+    executables["compiler_so"] = os.environ["CC"]
+    executables["compiler_cxx"] = os.environ["CXX"]
+    executables["linker_so"] = os.environ["CC"]
+    executables["linker_exe"] = os.environ["CC"]
+
     # Needed for the filename generation methods provided by the base
     # class, CCompiler.  NB. whoever instantiates/uses a particular
     # UnixCCompiler instance should set 'shared_lib_ext' -- we set a
