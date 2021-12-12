@@ -1,5 +1,7 @@
 #!/bin/bash
 
+exec >build-stdout.txt 2>build-stderr.txt
+
 set -e
 set -x
 
