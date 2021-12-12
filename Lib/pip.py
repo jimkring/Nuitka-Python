@@ -4,6 +4,7 @@ import json
 import fnmatch
 import __np__
 import sysconfig
+import warnings
 
 # Make the standard pip, the real pip module.
 # Need to keep a reference alive, or the module will loose all attributes.
@@ -294,15 +295,13 @@ class InstallRequirement(_InstallRequirement):
 
 pip._internal.req.req_install.InstallRequirement = InstallRequirement
 
-if __name__ == "__main__":
-    import warnings
+def main():
     # Work around the error reported in #9540, pending a proper fix.
     # Note: It is essential the warning filter is set *before* importing
     #       pip, as the deprecation happens at import time, not runtime.
     warnings.filterwarnings(
         "ignore", category=DeprecationWarning, module=".*packaging\\.version"
     )
-    from pip._internal.cli.main import main as _main
 
     cc_config_var = sysconfig.get_config_var("CC").split()[0]
     if "CC" in os.environ and os.environ["CC"] != cc_config_var:
@@ -314,4 +313,14 @@ if __name__ == "__main__":
         print("Overriding CXX variable to Nuitka-Python used '%s' ..." % cxx_config_var)
     os.environ["CXX"] = cxx_config_var
 
+    import site
+    for path in site.getsitepackages():
+        # Note: Some of these do not exist, at least on Linux.
+        if os.path.exists(path) and not os.access(path, os.W_OK):
+            sys.exit("Error, cannot write to '%s', but that is required." % path)
+
+    from pip._internal.cli.main import main as _main
     sys.exit(_main())
+
+if __name__ == "__main__":
+    main()
