@@ -269,8 +269,9 @@ def run_build_tool_exe(tool_name, exe, *args, **kwargs):
 
 def apply_patch(patch_file, directory):
     """ Apply a patch file to a directory. """
+    my_print("Applying patch '%s' to '%s'" % (patch_file, directory))
     with open(patch_file, "rb") as stdin:
-        run_build_tool_exe("patch", "patch.exe" if os.name=="nt" else "patch", "-d", directory, "-p", "1", stdin=stdin)
+        run_build_tool_exe("patch", "patch.exe" if os.name=="nt" else "patch", "-d", directory, "-p", "1", "--verbose", stdin=stdin)
 
 def find_dep_include(dep_name):
     return os.path.join(getDependencyInstallDir(), dep_name, 'include')
