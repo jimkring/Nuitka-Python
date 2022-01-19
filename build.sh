@@ -22,6 +22,9 @@ else
   CXX=`echo "$CC" | sed -e 's#cc#++#'`
 fi
 
+export CC
+export CXX
+
 # The UCS4 has best compatibility with wheels on PyPI it seems.
 ./configure --prefix=$target --disable-shared --enable-ipv6 --enable-unicode=ucs4 \
   --enable-optimizations --with-lto --with-computed-gotos --with-fpectl \
