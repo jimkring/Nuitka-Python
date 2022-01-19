@@ -38,7 +38,7 @@ make build_all_merge_profile
 
 # Delayed deletion of old installation, to avoid having it not there for testing purposes
 # while compiling, which is slow due to PGO beign applied.
-sudo rm -rf $target && sudo make install
+sudo rm -rf $target && sudo --preserve-env=CC,CXX make install
 
 # Make sure to have pip installed, might even remove it afterwards, Debian
 # e.g. doesn't include it.
