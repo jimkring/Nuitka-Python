@@ -1228,6 +1228,10 @@ load_package(char *name, char *pathname)
 static int
 is_builtin(char *name)
 {
+    if (getenv("NND") != NULL) {
+        printf("Considering '%s' for builtin import.\n", name);
+    }
+
     int i;
     for (i = 0; PyImport_Inittab[i].name != NULL; i++) {
         if (strcmp(name, PyImport_Inittab[i].name) == 0) {
@@ -1423,6 +1427,15 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
                      "No frozen submodule named %.200s", name);
         goto error_exit;
     }
+
+    // Nuitka: Do this also for fullname, the built-in for static modules are
+    // in packages, unlike default Python2 ones.
+    if (fullname != NULL && is_builtin(fullname)) {
+        strcpy(buf, fullname);
+        PyMem_FREE(name);
+        return &fd_builtin;
+    }
+
     if (path == NULL) {
         if (is_builtin(name)) {
             strcpy(buf, name);
