@@ -160,7 +160,7 @@ _ssl _ssl.c -lssl -lcrypto
 # Some more UNIX dependent modules -- off by default, since these
 # are not supported by all UNIX systems:
 
-nis nismodule.c -lnsl	# Sun yellow pages -- not everywhere
+# nis nismodule.c -lnsl	# Sun yellow pages -- not everywhere
 #termios termios.c	# Steen Lumholt's termios module
 resource resource.c	# Jeremy Hylton's rlimit interface
 
@@ -418,4 +418,4 @@ _codecs_tw cjkcodecs/_codecs_tw.c
 # xx xxmodule.c
 
 # Another example -- the 'xxsubtype' module shows C-level subtyping in action
-xxsubtype xxsubtype.c
+# xxsubtype xxsubtype.c
