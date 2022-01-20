@@ -2053,7 +2053,25 @@ init_builtin(char *name)
             }
             if (Py_VerboseFlag)
                 PySys_WriteStderr("import %s # builtin\n", name);
+
+            // Nuitka: For packages need to set context from name.
+            char const *dot = strrchr(name, '.');
+            char const *package;
+
+            if (dot == NULL) {
+                package = NULL;
+            } else {
+                // The extension modules do expect it to be full name in context.
+                package = (char *)name;
+            }
+
+            char *old_context = _Py_PackageContext;
+            _Py_PackageContext = (char *)package;
+
             (*p->initfunc)();
+
+            _Py_PackageContext = old_context;
+
             if (PyErr_Occurred())
                 return -1;
             if (_PyImport_FixupExtension(name, name) == NULL)
