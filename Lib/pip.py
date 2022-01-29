@@ -375,14 +375,6 @@ class InstallRequirement(_InstallRequirement):
 pip._internal.req.req_install.InstallRequirement = InstallRequirement
 
 
-import pip._internal.index.package_finder
-from pip._internal import wheel_builder
-from pip._internal.models.candidate import InstallationCandidate
-from pip._internal.models.link import Link
-
-_PackageFinder = pip._internal.index.package_finder.PackageFinder
-
-
 def build_stub(
     requirements,  # type: Iterable[InstallRequirement]
     wheel_cache,  # type: WheelCache
@@ -393,31 +385,40 @@ def build_stub(
     return [], requirements
 
 
-wheel_builder.build = build_stub
+def patchWheelBuilder():
+    from pip._internal import wheel_builder
+
+    wheel_builder.build = build_stub
 
 
-class PackageFinder(_PackageFinder):
-    def find_all_candidates(self, project_name):
-        base_candidates = _PackageFinder.find_all_candidates(self, project_name)
+def patchPackageFinder():
+    import pip._internal.index.package_finder
+    from pip._internal.models.candidate import InstallationCandidate
+    from pip._internal.models.link import Link
 
-        try:
-            package_index = getPackageJson("packages", project_name)
-        except __np__.NoSuchURL:
-            return base_candidates
+    _PackageFinder = pip._internal.index.package_finder.PackageFinder
 
-        package_sources = []
-        if "sources" in package_index:
-            for source in package_index["sources"]:
-                package_sources.append(
-                    InstallationCandidate(
-                        project_name, source["version"], Link(source["link"])
+    class PackageFinder(_PackageFinder):
+        def find_all_candidates(self, project_name):
+            base_candidates = _PackageFinder.find_all_candidates(self, project_name)
+
+            try:
+                package_index = getPackageJson("packages", project_name)
+            except __np__.NoSuchURL:
+                return base_candidates
+
+            package_sources = []
+            if "sources" in package_index:
+                for source in package_index["sources"]:
+                    package_sources.append(
+                        InstallationCandidate(
+                            project_name, source["version"], Link(source["link"])
+                        )
                     )
-                )
 
-        return package_sources + base_candidates
+            return package_sources + base_candidates
 
-
-pip._internal.index.package_finder.PackageFinder = PackageFinder
+    pip._internal.index.package_finder.PackageFinder = PackageFinder
 
 
 def main():
@@ -444,6 +445,11 @@ def main():
         # Note: Some of these do not exist, at least on Linux.
         if os.path.exists(path) and not os.access(path, os.W_OK):
             sys.exit("Error, cannot write to '%s', but that is required." % path)
+
+    if str is not bytes:
+        patchPackageFinder()
+
+    patchWheelBuilder()
 
     from pip._internal.cli.main import main as _main
 

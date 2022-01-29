@@ -319,7 +319,11 @@ static inline void Py_InitStaticModules(void) {
                     sysconfig_lib_dirs.append(arg[2:])
 
         link_libs = sysconfig_libs + link_libs
-        libpython_lib = [x for x in link_libs if os.path.basename(x).startswith('libpython') and x.endswith(".a")][0]
+        libpython_lib = [
+            x
+            for x in link_libs
+            if os.path.basename(x).startswith("libpython") and x.endswith(".a")
+        ][0]
         link_libs = [libpython_lib] + [x for x in link_libs if x != libpython_lib]
         library_dirs = sysconfig_lib_dirs + library_dirs
 

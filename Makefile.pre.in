@@ -1085,7 +1085,7 @@ LIBSUBDIRS=	lib-tk lib-tk/test lib-tk/test/test_tkinter \
 		multiprocessing multiprocessing/dummy \
 		unittest unittest/test \
 		lib-old \
-		curses pydoc_data $(MACHDEPS)
+		curses pydoc_data $(MACHDEPS) __np__
 libinstall:	build_all $(srcdir)/Lib/$(PLATDIR) $(srcdir)/Modules/xxmodule.c
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
 	do \

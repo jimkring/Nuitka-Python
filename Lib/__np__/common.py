@@ -6,11 +6,9 @@ import os
 import re
 import shutil
 import stat
-import subprocess
 import sys
 import sysconfig
 import tempfile
-from distutils.util import get_platform  # pylint: disable=import-error
 
 
 def getDependencyInstallDir():
