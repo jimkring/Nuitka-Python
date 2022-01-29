@@ -178,4 +178,6 @@ PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
 #define PyDoc_STR(str) ""
 #endif
 
+#include "staticinit.h"
+
 #endif /* !Py_PYTHON_H */

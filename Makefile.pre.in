@@ -1239,6 +1239,7 @@ libainstall:	@DEF_MAKE_RULE@ python-config
 	fi
 	$(INSTALL_DATA) Modules/config.c $(DESTDIR)$(LIBPL)/config.c
 	$(INSTALL_DATA) Modules/python.o $(DESTDIR)$(LIBPL)/python.o
+	$(INSTALL_DATA) Modules/python.c $(prefix)/python.c
 	$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(DESTDIR)$(LIBPL)/config.c.in
 	$(INSTALL_DATA) Makefile $(DESTDIR)$(LIBPL)/Makefile
 	$(INSTALL_DATA) Modules/Setup $(DESTDIR)$(LIBPL)/Setup

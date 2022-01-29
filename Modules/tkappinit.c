@@ -136,7 +136,7 @@ Tcl_AppInit(Tcl_Interp *interp)
     }
 #endif
 
-#ifdef WITH_PIL /* 0.2b5 and later -- not yet released as of May 14 */
+#ifdef WITH_PIL_ /* 0.2b5 and later -- not yet released as of May 14 */
     {
         extern void TkImaging_Init(Tcl_Interp *);
         TkImaging_Init(interp);
@@ -145,7 +145,7 @@ Tcl_AppInit(Tcl_Interp *interp)
     }
 #endif
 
-#ifdef WITH_PIL_OLD /* 0.2b4 and earlier */
+#ifdef WITH_PIL_OLD_ /* 0.2b4 and earlier */
     {
         extern void TkImaging_Init(void);
         /* XXX TkImaging_Init() doesn't have the right prototype */

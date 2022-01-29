@@ -128,7 +128,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 
 		# Output DEFS in reverse order so first definition overrides
 		case $line in
-		*=*)	DEFS="$line$NL$DEFS"; continue;;
+		*=*)	if [[ $line != *" "* ]]; then DEFS="$line$NL$DEFS"; continue; fi;;
 		'include '*)	DEFS="$line$NL$DEFS"; continue;;
 		'*noobjects*')
 			case $noobjects in
@@ -270,7 +270,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	*)  sed -e "
 		1i$NL/* Generated automatically from $config by makesetup. */
 		/MARKER 1/i$NL$EXTDECLS
- 
+
 		/MARKER 2/i$NL$INITBITS
 
 		" $config >config.c
