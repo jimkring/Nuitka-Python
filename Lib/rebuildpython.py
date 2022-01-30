@@ -83,7 +83,7 @@ def run_rebuild():
 
     from distutils.sysconfig import get_config_var
 
-    ext_suffix = get_config_var("EXT_SUFFIX")
+    ext_suffix = get_config_var("SO" if str is bytes else "EXT_SUFFIX")
 
     # Scan sys.path for any more lingering static libs.
     for path in reversed(sys.path):
