@@ -6,10 +6,11 @@ ways from the original.
 
 Our immediate goals are:
 
-[x] Windows: Add static linking (performance and lock down)
-[x] Windows: Reenable Windows 7 support (because why not)
 [x] LTO linking on Windows and Linux (performance and deployment size)
+[x] Windows: Add static linking (performance and lock down)
+[x] Linux: Add optional static linking (performance and lock down)
 [x] Automatic patches for packages built from pip
+[x] Windows: Reenable Windows 7 support (because why not)
 [ ] Support all major packages and provide upstream guidance.
 
 Installation
