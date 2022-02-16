@@ -241,10 +241,8 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
             buffer = BufferedRandom(raw, buffering)
         elif creating or writing or appending:
             buffer = BufferedWriter(raw, buffering)
-        elif reading:
-            buffer = BufferedReader(raw, buffering)
         else:
-            raise ValueError("unknown mode: %r" % mode)
+            buffer = BufferedReader(raw, buffering)
         result = buffer
         if binary:
             return result
@@ -644,11 +642,7 @@ class RawIOBase(IOBase):
             if not data:
                 break
             res += data
-        if res:
-            return bytes(res)
-        else:
-            # b'' or None
-            return data
+        return bytes(res) if res else data
 
     def readinto(self, b):
         """Read bytes into a pre-allocated bytes-like object b.
@@ -744,10 +738,7 @@ class BufferedIOBase(IOBase):
             b = memoryview(b)
         b = b.cast('B')
 
-        if read1:
-            data = self.read1(len(b))
-        else:
-            data = self.read(len(b))
+        data = self.read1(len(b)) if read1 else self.read(len(b))
         n = len(data)
 
         b[:n] = data
@@ -1082,10 +1073,7 @@ class BufferedReader(_BufferedIOMixin):
             self._reset_read_buf()
             if hasattr(self.raw, 'readall'):
                 chunk = self.raw.readall()
-                if chunk is None:
-                    return buf[pos:] or None
-                else:
-                    return buf[pos:] + chunk
+                return buf[pos:] or None if chunk is None else buf[pos:] + chunk
             chunks = [buf[pos:]]  # Strip the consumed bytes.
             current_size = 0
             while True:
@@ -1138,8 +1126,7 @@ class BufferedReader(_BufferedIOMixin):
         have = len(self._read_buf) - self._read_pos
         if have < want or have <= 0:
             to_read = self.buffer_size - have
-            current = self.raw.read(to_read)
-            if current:
+            if current := self.raw.read(to_read):
                 self._read_buf = self._read_buf[self._read_pos:] + current
                 self._read_pos = 0
         return self._read_buf[self._read_pos:]
@@ -1178,9 +1165,7 @@ class BufferedReader(_BufferedIOMixin):
         with self._read_lock:
             while written < len(buf):
 
-                # First try to read from internal buffer
-                avail = min(len(self._read_buf) - self._read_pos, len(buf))
-                if avail:
+                if avail := min(len(self._read_buf) - self._read_pos, len(buf)):
                     buf[written:written+avail] = \
                         self._read_buf[self._read_pos:self._read_pos+avail]
                     self._read_pos += avail

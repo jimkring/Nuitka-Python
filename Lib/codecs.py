@@ -488,14 +488,10 @@ class StreamReader(Codec):
         # read until we get the required number of characters (if available)
         while True:
             # can the request be satisfied from the character buffer?
-            if chars >= 0:
-                if len(self.charbuffer) >= chars:
-                    break
+            if chars >= 0 and len(self.charbuffer) >= chars:
+                break
             # we need more data
-            if size < 0:
-                newdata = self.stream.read()
-            else:
-                newdata = self.stream.read(size)
+            newdata = self.stream.read() if size < 0 else self.stream.read(size)
             # decode bytes (those remaining from the last call included)
             data = self.bytebuffer + newdata
             if not data:
@@ -503,13 +499,12 @@ class StreamReader(Codec):
             try:
                 newchars, decodedbytes = self.decode(data, self.errors)
             except UnicodeDecodeError as exc:
-                if firstline:
-                    newchars, decodedbytes = \
-                        self.decode(data[:exc.start], self.errors)
-                    lines = newchars.splitlines(keepends=True)
-                    if len(lines)<=1:
-                        raise
-                else:
+                if not firstline:
+                    raise
+                newchars, decodedbytes = \
+                    self.decode(data[:exc.start], self.errors)
+                lines = newchars.splitlines(keepends=True)
+                if len(lines)<=1:
                     raise
             # keep undecoded bytes until the next call
             self.bytebuffer = data[decodedbytes:]
@@ -556,17 +551,14 @@ class StreamReader(Codec):
         # If size is given, we call read() only once
         while True:
             data = self.read(readsize, firstline=True)
-            if data:
-                # If we're at a "\r" read one extra character (which might
-                # be a "\n") to get a proper line ending. If the stream is
-                # temporarily exhausted we return the wrong line ending.
-                if (isinstance(data, str) and data.endswith("\r")) or \
-                   (isinstance(data, bytes) and data.endswith(b"\r")):
-                    data += self.read(size=1, chars=1)
+            if data and (
+                (isinstance(data, str) and data.endswith("\r"))
+                or (isinstance(data, bytes) and data.endswith(b"\r"))
+            ):
+                data += self.read(size=1, chars=1)
 
             line += data
-            lines = line.splitlines(keepends=True)
-            if lines:
+            if lines := line.splitlines(keepends=True):
                 if len(lines) > 1:
                     # More than one line result; the first line is a full line
                     # to return
@@ -589,10 +581,7 @@ class StreamReader(Codec):
                     # Put the rest back together and keep it until the next call
                     self.charbuffer = self._empty_charbuffer.join(lines[1:]) + \
                                       self.charbuffer
-                    if keepends:
-                        line = line0withend
-                    else:
-                        line = line0withoutend
+                    line = line0withend if keepends else line0withoutend
                     break
             # we didn't get anything or this was our only try
             if not data or size is not None:
@@ -642,8 +631,7 @@ class StreamReader(Codec):
     def __next__(self):
 
         """ Return the next decoded line from the input stream."""
-        line = self.readline()
-        if line:
+        if line := self.readline():
             return line
         raise StopIteration
 
@@ -808,10 +796,7 @@ class StreamRecoder:
 
     def readline(self, size=None):
 
-        if size is None:
-            data = self.reader.readline()
-        else:
-            data = self.reader.readline(size)
+        data = self.reader.readline() if size is None else self.reader.readline(size)
         data, bytesencoded = self.encode(data, self.errors)
         return data
 
@@ -901,7 +886,7 @@ def open(filename, mode='r', encoding=None, errors='strict', buffering=-1):
     if encoding is not None and \
        'b' not in mode:
         # Force opening of the file in binary mode
-        mode = mode + 'b'
+        mode = f'{mode}b'
     file = builtins.open(filename, mode, buffering)
     if encoding is None:
         return file
@@ -1033,11 +1018,9 @@ def iterencode(iterator, encoding, errors='strict', **kwargs):
     """
     encoder = getincrementalencoder(encoding)(errors, **kwargs)
     for input in iterator:
-        output = encoder.encode(input)
-        if output:
+        if output := encoder.encode(input):
             yield output
-    output = encoder.encode("", True)
-    if output:
+    if output := encoder.encode("", True):
         yield output
 
 def iterdecode(iterator, encoding, errors='strict', **kwargs):
@@ -1051,11 +1034,9 @@ def iterdecode(iterator, encoding, errors='strict', **kwargs):
     """
     decoder = getincrementaldecoder(encoding)(errors, **kwargs)
     for input in iterator:
-        output = decoder.decode(input)
-        if output:
+        if output := decoder.decode(input):
             yield output
-    output = decoder.decode(b"", True)
-    if output:
+    if output := decoder.decode(b"", True):
         yield output
 
 ### Helpers for charmap-based codecs
@@ -1085,10 +1066,7 @@ def make_encoding_map(decoding_map):
     """
     m = {}
     for k,v in decoding_map.items():
-        if not v in m:
-            m[v] = k
-        else:
-            m[v] = None
+        m[v] = k if v not in m else None
     return m
 
 ### error handlers
@@ -1109,10 +1087,7 @@ except LookupError:
     backslashreplace_errors = None
     namereplace_errors = None
 
-# Tell modulefinder that using codecs probably needs the encodings
-# package
-_false = 0
-if _false:
+if _false := 0:
     import encodings
 
 ### Tests

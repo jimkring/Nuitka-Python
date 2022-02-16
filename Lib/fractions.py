@@ -115,18 +115,15 @@ class Fraction(numbers.Rational):
                     raise ValueError('Invalid literal for Fraction: %r' %
                                      numerator)
                 numerator = int(m.group('num') or '0')
-                denom = m.group('denom')
-                if denom:
+                if denom := m.group('denom'):
                     denominator = int(denom)
                 else:
                     denominator = 1
-                    decimal = m.group('decimal')
-                    if decimal:
+                    if decimal := m.group('decimal'):
                         scale = 10**len(decimal)
                         numerator = numerator * scale + int(decimal)
                         denominator *= scale
-                    exp = m.group('exp')
-                    if exp:
+                    if exp := m.group('exp'):
                         exp = int(exp)
                         if exp >= 0:
                             numerator *= 10**exp
@@ -248,10 +245,7 @@ class Fraction(numbers.Rational):
         k = (max_denominator-q0)//q1
         bound1 = Fraction(p0+k*p1, q0+k*q1)
         bound2 = Fraction(p1, q1)
-        if abs(bound2 - self) <= abs(bound1-self):
-            return bound2
-        else:
-            return bound1
+        return bound2 if abs(bound2 - self) <= abs(bound1-self) else bound1
 
     @property
     def numerator(a):
@@ -438,27 +432,25 @@ class Fraction(numbers.Rational):
         result will be rational.
 
         """
-        if isinstance(b, numbers.Rational):
-            if b.denominator == 1:
-                power = b.numerator
-                if power >= 0:
-                    return Fraction(a._numerator ** power,
-                                    a._denominator ** power,
-                                    _normalize=False)
-                elif a._numerator >= 0:
-                    return Fraction(a._denominator ** -power,
-                                    a._numerator ** -power,
-                                    _normalize=False)
-                else:
-                    return Fraction((-a._denominator) ** -power,
-                                    (-a._numerator) ** -power,
-                                    _normalize=False)
-            else:
-                # A fractional power will generally produce an
-                # irrational number.
-                return float(a) ** float(b)
-        else:
+        if not isinstance(b, numbers.Rational):
             return float(a) ** b
+        if b.denominator != 1:
+            # A fractional power will generally produce an
+            # irrational number.
+            return float(a) ** float(b)
+        power = b.numerator
+        if power >= 0:
+            return Fraction(a._numerator ** power,
+                            a._denominator ** power,
+                            _normalize=False)
+        elif a._numerator >= 0:
+            return Fraction(a._denominator ** -power,
+                            a._numerator ** -power,
+                            _normalize=False)
+        else:
+            return Fraction((-a._denominator) ** -power,
+                            (-a._numerator) ** -power,
+                            _normalize=False)
 
     def __rpow__(b, a):
         """a ** b"""
@@ -509,12 +501,11 @@ class Fraction(numbers.Rational):
         """
         if ndigits is None:
             floor, remainder = divmod(self.numerator, self.denominator)
-            if remainder * 2 < self.denominator:
-                return floor
-            elif remainder * 2 > self.denominator:
-                return floor + 1
-            # Deal with the half case:
-            elif floor % 2 == 0:
+            if (
+                remainder * 2 < self.denominator
+                or remainder * 2 <= self.denominator
+                and floor % 2 == 0
+            ):
                 return floor
             else:
                 return floor + 1
@@ -573,7 +564,7 @@ class Fraction(numbers.Rational):
             if math.isnan(b) or math.isinf(b):
                 # comparisons with an infinity or nan should behave in
                 # the same way for any finite a, so treat a as zero.
-                return 0.0 == b
+                return b == 0.0
             else:
                 return a == a.from_float(b)
         else:

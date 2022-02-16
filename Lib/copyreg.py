@@ -65,9 +65,9 @@ def _reduce_ex(self, proto):
         base = object # not really reachable
     if base is object:
         state = None
+    elif base is cls:
+        raise TypeError(f"cannot pickle {cls.__name__!r} object")
     else:
-        if base is cls:
-            raise TypeError(f"cannot pickle {cls.__name__!r} object")
         state = base(self)
     args = (cls, base, state)
     try:
@@ -84,10 +84,7 @@ def _reduce_ex(self, proto):
             dict = None
     else:
         dict = getstate()
-    if dict:
-        return _reconstructor, args, dict
-    else:
-        return _reconstructor, args
+    return (_reconstructor, args, dict) if dict else (_reconstructor, args)
 
 # Helper for __reduce_ex__ protocol 2
 
@@ -118,10 +115,7 @@ def _slotnames(cls):
 
     # Not cached -- calculate the value
     names = []
-    if not hasattr(cls, "__slots__"):
-        # This class has no slots
-        pass
-    else:
+    if hasattr(cls, "__slots__"):
         # Slots found -- gather slot names from all base classes
         for c in cls.__mro__:
             if "__slots__" in c.__dict__:
@@ -133,10 +127,8 @@ def _slotnames(cls):
                     # special descriptors
                     if name in ("__dict__", "__weakref__"):
                         continue
-                    # mangled names
                     elif name.startswith('__') and not name.endswith('__'):
-                        stripped = c.__name__.lstrip('_')
-                        if stripped:
+                        if stripped := c.__name__.lstrip('_'):
                             names.append('_%s%s' % (stripped, name))
                         else:
                             names.append(name)

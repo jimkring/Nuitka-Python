@@ -44,15 +44,12 @@ def _is_sunder(name):
 def _is_private(cls_name, name):
     # do not use `re` as `re` imports `enum`
     pattern = '_%s__' % (cls_name, )
-    if (
+    return bool((
             len(name) >= 5
             and name.startswith(pattern)
             and name[len(pattern)] != '_'
             and (name[-1] != '_' or name[-2] != '_')
-        ):
-        return True
-    else:
-        return False
+        ))
 
 def _make_class_unpicklable(cls):
     """
@@ -119,8 +116,7 @@ class _EnumDict(dict):
                 else:
                     value = list(value)
                 self._ignore = value
-                already = set(value) & set(self._member_names)
-                if already:
+                if already := set(value) & set(self._member_names):
                     raise ValueError(
                             '_ignore_ cannot specify already set names: %r'
                             % (already, )
@@ -201,9 +197,7 @@ class EnumMeta(type):
         # adjust the sunders
         _order_ = classdict.pop('_order_', None)
 
-        # check for illegal enum names (any others?)
-        invalid_names = set(enum_members) & {'mro', ''}
-        if invalid_names:
+        if invalid_names := set(enum_members) & {'mro', ''}:
             raise ValueError('Invalid enum member name: {0}'.format(
                 ','.join(invalid_names)))
 
@@ -237,12 +231,11 @@ class EnumMeta(type):
         # sabotage -- it's on them to make sure it works correctly.  We use
         # __reduce_ex__ instead of any of the others as it is preferred by
         # pickle over __reduce__, and it handles all pickle protocols.
-        if '__reduce_ex__' not in classdict:
-            if member_type is not object:
-                methods = ('__getnewargs_ex__', '__getnewargs__',
-                        '__reduce_ex__', '__reduce__')
-                if not any(m in member_type.__dict__ for m in methods):
-                    _make_class_unpicklable(enum_class)
+        if '__reduce_ex__' not in classdict and member_type is not object:
+            methods = ('__getnewargs_ex__', '__getnewargs__',
+                    '__reduce_ex__', '__reduce__')
+            if all(m not in member_type.__dict__ for m in methods):
+                _make_class_unpicklable(enum_class)
 
         # instantiate them, checking for duplicates as we go
         # we instantiate first instead of checking for duplicates first in case
@@ -250,10 +243,7 @@ class EnumMeta(type):
         # auto-numbering ;)
         for member_name in classdict._member_names:
             value = enum_members[member_name]
-            if not isinstance(value, tuple):
-                args = (value, )
-            else:
-                args = value
+            args = (value, ) if not isinstance(value, tuple) else value
             if member_type is tuple:   # special case for tuple enums
                 args = (args, )     # wrap it one more time
             if not use_args:
@@ -263,10 +253,7 @@ class EnumMeta(type):
             else:
                 enum_member = __new__(enum_class, *args)
                 if not hasattr(enum_member, '_value_'):
-                    if member_type is object:
-                        enum_member._value_ = value
-                    else:
-                        enum_member._value_ = member_type(*args)
+                    enum_member._value_ = value if member_type is object else member_type(*args)
             value = enum_member._value_
             enum_member._name_ = member_name
             enum_member.__objclass__ = enum_class
@@ -511,10 +498,7 @@ class EnumMeta(type):
         # also, replace the __reduce_ex__ method so unpickling works in
         # previous Python versions
         module_globals = vars(sys.modules[module])
-        if source:
-            source = vars(source)
-        else:
-            source = module_globals
+        source = vars(source) if source else module_globals
         # _value2member_map_ is populated in the same order every time
         # for a consistent reverse mapping of number to name when there
         # are multiple names for the same number.
@@ -567,8 +551,6 @@ class EnumMeta(type):
                             data_types.append(base._member_type_)
                             break
                     elif '__new__' in base.__dict__:
-                        if issubclass(base, Enum):
-                            continue
                         data_types.append(candidate or base)
                         break
                     else:
@@ -630,10 +612,7 @@ class EnumMeta(type):
         # if a non-object.__new__ is used then whatever value/tuple was
         # assigned to the enum member name will be passed to __new__ and to the
         # new enum member's __init__
-        if __new__ is object.__new__:
-            use_args = False
-        else:
-            use_args = True
+        use_args = __new__ is not object.__new__
         return __new__, save_new, use_args
 
 
@@ -672,17 +651,16 @@ class Enum(metaclass=EnumMeta):
         try:
             if isinstance(result, cls):
                 return result
-            else:
-                ve_exc = ValueError("%r is not a valid %s" % (value, cls.__qualname__))
-                if result is None and exc is None:
-                    raise ve_exc
-                elif exc is None:
-                    exc = TypeError(
-                            'error in %s._missing_: returned %r instead of None or a valid member'
-                            % (cls.__name__, result)
-                            )
-                exc.__context__ = ve_exc
-                raise exc
+            ve_exc = ValueError("%r is not a valid %s" % (value, cls.__qualname__))
+            if result is None and exc is None:
+                raise ve_exc
+            elif exc is None:
+                exc = TypeError(
+                        'error in %s._missing_: returned %r instead of None or a valid member'
+                        % (cls.__name__, result)
+                        )
+            exc.__context__ = ve_exc
+            raise exc
         finally:
             # ensure all variables that could hold an exception are destroyed
             exc = None
@@ -702,8 +680,7 @@ class Enum(metaclass=EnumMeta):
                 return last_value + 1
             except TypeError:
                 pass
-        else:
-            return start
+        return start
 
     @classmethod
     def _missing_(cls, value):
@@ -908,8 +885,7 @@ class IntFlag(int, Flag):
         """
         if not isinstance(value, int):
             raise ValueError("%r is not a valid %s" % (value, cls.__qualname__))
-        new_member = cls._create_pseudo_member_(value)
-        return new_member
+        return cls._create_pseudo_member_(value)
 
     @classmethod
     def _create_pseudo_member_(cls, value):
@@ -947,8 +923,7 @@ class IntFlag(int, Flag):
     def __or__(self, other):
         if not isinstance(other, (self.__class__, int)):
             return NotImplemented
-        result = self.__class__(self._value_ | self.__class__(other)._value_)
-        return result
+        return self.__class__(self._value_ | self.__class__(other)._value_)
 
     def __and__(self, other):
         if not isinstance(other, (self.__class__, int)):
@@ -965,8 +940,7 @@ class IntFlag(int, Flag):
     __rxor__ = __xor__
 
     def __invert__(self):
-        result = self.__class__(~self._value_)
-        return result
+        return self.__class__(~self._value_)
 
 
 def _high_bit(value):
@@ -979,11 +953,11 @@ def unique(enumeration):
     """
     Class decorator for enumerations ensuring unique member values.
     """
-    duplicates = []
-    for name, member in enumeration.__members__.items():
-        if name != member.name:
-            duplicates.append((name, member.name))
-    if duplicates:
+    if duplicates := [
+        (name, member.name)
+        for name, member in enumeration.__members__.items()
+        if name != member.name
+    ]:
         alias_details = ', '.join(
                 ["%s -> %s" % (alias, name) for (alias, name) in duplicates])
         raise ValueError('duplicate values found in %r: %s' %

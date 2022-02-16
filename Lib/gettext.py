@@ -139,7 +139,7 @@ def _parse(tokens, priority=-1):
         if i < priority:
             break
         # Break chained comparisons
-        if i in (3, 4) and j in (3, 4):  # '==', '!=', '<', '>', '<=', '>='
+        if i in (3, 4) and j in {3, 4}:  # '==', '!=', '<', '>', '<=', '>='
             result = '(%s)' % result
         # Replace some C operators by their Python equivalents
         op = _c2py_ops.get(nexttok, nexttok)
@@ -270,9 +270,7 @@ class NullTranslations:
             self._fallback = fallback
 
     def gettext(self, message):
-        if self._fallback:
-            return self._fallback.gettext(message)
-        return message
+        return self._fallback.gettext(message) if self._fallback else message
 
     def lgettext(self, message):
         import warnings
@@ -291,10 +289,7 @@ class NullTranslations:
     def ngettext(self, msgid1, msgid2, n):
         if self._fallback:
             return self._fallback.ngettext(msgid1, msgid2, n)
-        if n == 1:
-            return msgid1
-        else:
-            return msgid2
+        return msgid1 if n == 1 else msgid2
 
     def lngettext(self, msgid1, msgid2, n):
         import warnings
@@ -306,10 +301,7 @@ class NullTranslations:
                 warnings.filterwarnings('ignore', r'.*\blngettext\b.*',
                                         DeprecationWarning)
                 return self._fallback.lngettext(msgid1, msgid2, n)
-        if n == 1:
-            tmsg = msgid1
-        else:
-            tmsg = msgid2
+        tmsg = msgid1 if n == 1 else msgid2
         if self._output_charset:
             return tmsg.encode(self._output_charset)
         return tmsg.encode(locale.getpreferredencoding())
@@ -322,10 +314,7 @@ class NullTranslations:
     def npgettext(self, context, msgid1, msgid2, n):
         if self._fallback:
             return self._fallback.npgettext(context, msgid1, msgid2, n)
-        if n == 1:
-            return msgid1
-        else:
-            return msgid2
+        return msgid1 if n == 1 else msgid2
 
     def info(self):
         return self._info
@@ -397,20 +386,19 @@ class GNUTranslations(NullTranslations):
         major_version, minor_version = self._get_versions(version)
 
         if major_version not in self.VERSIONS:
-            raise OSError(0, 'Bad version number ' + str(major_version), filename)
+            raise OSError(0, f'Bad version number {str(major_version)}', filename)
 
         # Now put all messages from the .mo file buffer into the catalog
         # dictionary.
-        for i in range(0, msgcount):
+        for i in range(msgcount):
             mlen, moff = unpack(ii, buf[masteridx:masteridx+8])
             mend = moff + mlen
             tlen, toff = unpack(ii, buf[transidx:transidx+8])
             tend = toff + tlen
-            if mend < buflen and tend < buflen:
-                msg = buf[moff:mend]
-                tmsg = buf[toff:tend]
-            else:
+            if mend >= buflen or tend >= buflen:
                 raise OSError(0, 'File is corrupt', filename)
+            msg = buf[moff:mend]
+            tmsg = buf[toff:tend]
             # See if we're looking at GNU .mo conventions for metadata
             if mlen == 0:
                 # Catalog description
@@ -485,10 +473,7 @@ class GNUTranslations(NullTranslations):
         except KeyError:
             if self._fallback:
                 return self._fallback.lngettext(msgid1, msgid2, n)
-            if n == 1:
-                tmsg = msgid1
-            else:
-                tmsg = msgid2
+            tmsg = msgid1 if n == 1 else msgid2
         if self._output_charset:
             return tmsg.encode(self._output_charset)
         return tmsg.encode(locale.getpreferredencoding())
@@ -497,9 +482,7 @@ class GNUTranslations(NullTranslations):
         missing = object()
         tmsg = self._catalog.get(message, missing)
         if tmsg is missing:
-            if self._fallback:
-                return self._fallback.gettext(message)
-            return message
+            return self._fallback.gettext(message) if self._fallback else message
         return tmsg
 
     def ngettext(self, msgid1, msgid2, n):
@@ -508,10 +491,7 @@ class GNUTranslations(NullTranslations):
         except KeyError:
             if self._fallback:
                 return self._fallback.ngettext(msgid1, msgid2, n)
-            if n == 1:
-                tmsg = msgid1
-            else:
-                tmsg = msgid2
+            tmsg = msgid1 if n == 1 else msgid2
         return tmsg
 
     def pgettext(self, context, message):
@@ -531,10 +511,7 @@ class GNUTranslations(NullTranslations):
         except KeyError:
             if self._fallback:
                 return self._fallback.npgettext(context, msgid1, msgid2, n)
-            if n == 1:
-                tmsg = msgid1
-            else:
-                tmsg = msgid2
+            tmsg = msgid1 if n == 1 else msgid2
         return tmsg
 
 
@@ -546,8 +523,7 @@ def find(domain, localedir=None, languages=None, all=False):
     if languages is None:
         languages = []
         for envar in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
-            val = os.environ.get(envar)
-            if val:
+            if val := os.environ.get(envar):
                 languages = val.split(':')
                 break
         if 'C' not in languages:
@@ -559,10 +535,7 @@ def find(domain, localedir=None, languages=None, all=False):
             if nelang not in nelangs:
                 nelangs.append(nelang)
     # select a language
-    if all:
-        result = []
-    else:
-        result = None
+    result = [] if all else None
     for lang in nelangs:
         if lang == 'C':
             break
@@ -690,10 +663,7 @@ def dngettext(domain, msgid1, msgid2, n):
     try:
         t = translation(domain, _localedirs.get(domain, None))
     except OSError:
-        if n == 1:
-            return msgid1
-        else:
-            return msgid2
+        return msgid1 if n == 1 else msgid2
     return t.ngettext(msgid1, msgid2, n)
 
 def ldngettext(domain, msgid1, msgid2, n):
@@ -708,10 +678,7 @@ def ldngettext(domain, msgid1, msgid2, n):
                                     DeprecationWarning)
             t = translation(domain, _localedirs.get(domain, None), codeset=codeset)
     except OSError:
-        if n == 1:
-            tmsg = msgid1
-        else:
-            tmsg = msgid2
+        tmsg = msgid1 if n == 1 else msgid2
         return tmsg.encode(codeset or locale.getpreferredencoding())
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', r'.*\blngettext\b.*',
@@ -731,10 +698,7 @@ def dnpgettext(domain, context, msgid1, msgid2, n):
     try:
         t = translation(domain, _localedirs.get(domain, None))
     except OSError:
-        if n == 1:
-            return msgid1
-        else:
-            return msgid2
+        return msgid1 if n == 1 else msgid2
     return t.npgettext(context, msgid1, msgid2, n)
 
 

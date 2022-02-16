@@ -551,10 +551,7 @@ class LegacyInterpolation(Interpolation):
     @staticmethod
     def _interpolation_replace(match, parser):
         s = match.group(1)
-        if s is None:
-            return match.group()
-        else:
-            return "%%(%s)s" % parser.optionxform(s)
+        return match.group() if s is None else "%%(%s)s" % parser.optionxform(s)
 
 
 class RawConfigParser(MutableMapping):
@@ -1055,12 +1052,9 @@ class RawConfigParser(MutableMapping):
             if (cursect is not None and optname and
                 cur_indent_level > indent_level):
                 cursect[optname].append(value)
-            # a section header or option header?
             else:
                 indent_level = cur_indent_level
-                # is it a section header?
-                mo = self.SECTCRE.match(value)
-                if mo:
+                if mo := self.SECTCRE.match(value):
                     sectname = mo.group('header')
                     if sectname in self._sections:
                         if self._strict and sectname in elements_added:
@@ -1077,13 +1071,10 @@ class RawConfigParser(MutableMapping):
                         elements_added.add(sectname)
                     # So sections can't start with a continuation line
                     optname = None
-                # no section header in the file?
                 elif cursect is None:
                     raise MissingSectionHeaderError(fpname, lineno, line)
-                # an option line?
                 else:
-                    mo = self._optcre.match(value)
-                    if mo:
+                    if mo := self._optcre.match(value):
                         optname, vi, optval = mo.group('option', 'vi', 'value')
                         if not optname:
                             e = self._handle_error(e, fpname, lineno, line)
@@ -1180,9 +1171,8 @@ class RawConfigParser(MutableMapping):
             raise TypeError("section names must be strings")
         if not isinstance(option, str):
             raise TypeError("option keys must be strings")
-        if not self._allow_no_value or value:
-            if not isinstance(value, str):
-                raise TypeError("option values must be strings")
+        if (not self._allow_no_value or value) and not isinstance(value, str):
+            raise TypeError("option values must be strings")
 
     @property
     def converters(self):
@@ -1242,7 +1232,7 @@ class SectionProxy(MutableMapping):
         self._parser = parser
         self._name = name
         for conv in parser.converters:
-            key = 'get' + conv
+            key = f'get{conv}'
             getter = functools.partial(self.get, _impl=getattr(parser, key))
             setattr(self, key, getter)
 
@@ -1328,7 +1318,7 @@ class ConverterMapping(MutableMapping):
 
     def __setitem__(self, key, value):
         try:
-            k = 'get' + key
+            k = f'get{key}'
         except TypeError:
             raise ValueError('Incompatible key: {} (type: {})'
                              ''.format(key, type(key)))

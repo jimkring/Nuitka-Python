@@ -97,9 +97,7 @@ class Hashable(metaclass=ABCMeta):
 
     @classmethod
     def __subclasshook__(cls, C):
-        if cls is Hashable:
-            return _check_methods(C, "__hash__")
-        return NotImplemented
+        return _check_methods(C, "__hash__") if cls is Hashable else NotImplemented
 
 
 class Awaitable(metaclass=ABCMeta):
@@ -112,9 +110,7 @@ class Awaitable(metaclass=ABCMeta):
 
     @classmethod
     def __subclasshook__(cls, C):
-        if cls is Awaitable:
-            return _check_methods(C, "__await__")
-        return NotImplemented
+        return _check_methods(C, "__await__") if cls is Awaitable else NotImplemented
 
     __class_getitem__ = classmethod(GenericAlias)
 
@@ -261,9 +257,7 @@ class Iterable(metaclass=ABCMeta):
 
     @classmethod
     def __subclasshook__(cls, C):
-        if cls is Iterable:
-            return _check_methods(C, "__iter__")
-        return NotImplemented
+        return _check_methods(C, "__iter__") if cls is Iterable else NotImplemented
 
     __class_getitem__ = classmethod(GenericAlias)
 
@@ -380,9 +374,7 @@ class Sized(metaclass=ABCMeta):
 
     @classmethod
     def __subclasshook__(cls, C):
-        if cls is Sized:
-            return _check_methods(C, "__len__")
-        return NotImplemented
+        return _check_methods(C, "__len__") if cls is Sized else NotImplemented
 
 
 class Container(metaclass=ABCMeta):
@@ -459,7 +451,7 @@ class _CallableGenericAlias(GenericAlias):
 
     def __reduce__(self):
         args = self.__args__
-        if not (len(args) == 2 and args[0] is Ellipsis):
+        if len(args) != 2 or args[0] is not Ellipsis:
             args = list(args[:-1]), args[-1]
         return _CallableGenericAlias, (Callable, args)
 
@@ -503,9 +495,7 @@ class Callable(metaclass=ABCMeta):
 
     @classmethod
     def __subclasshook__(cls, C):
-        if cls is Callable:
-            return _check_methods(C, "__call__")
-        return NotImplemented
+        return _check_methods(C, "__call__") if cls is Callable else NotImplemented
 
     __class_getitem__ = classmethod(_CallableGenericAlias)
 
@@ -532,10 +522,7 @@ class Set(Collection):
             return NotImplemented
         if len(self) > len(other):
             return False
-        for elem in self:
-            if elem not in other:
-                return False
-        return True
+        return all(elem in other for elem in self)
 
     def __lt__(self, other):
         if not isinstance(other, Set):
@@ -552,10 +539,7 @@ class Set(Collection):
             return NotImplemented
         if len(self) < len(other):
             return False
-        for elem in other:
-            if elem not in self:
-                return False
-        return True
+        return all(elem in self for elem in other)
 
     def __eq__(self, other):
         if not isinstance(other, Set):
@@ -580,10 +564,7 @@ class Set(Collection):
 
     def isdisjoint(self, other):
         'Return True if two sets have a null intersection.'
-        for value in other:
-            if value in self:
-                return False
-        return True
+        return all(value not in self for value in other)
 
     def __or__(self, other):
         if not isinstance(other, Iterable):
@@ -980,17 +961,13 @@ class Sequence(Reversible, Collection):
         i = 0
         try:
             while True:
-                v = self[i]
-                yield v
+                yield self[i]
                 i += 1
         except IndexError:
             return
 
     def __contains__(self, value):
-        for v in self:
-            if v is value or v == value:
-                return True
-        return False
+        return any(v is value or v == value for v in self)
 
     def __reversed__(self):
         for i in reversed(range(len(self))):
@@ -1021,7 +998,7 @@ class Sequence(Reversible, Collection):
 
     def count(self, value):
         'S.count(value) -> integer -- return number of occurrences of value'
-        return sum(1 for v in self if v is value or v == value)
+        return sum(v is value or v == value for v in self)
 
 
 Sequence.register(tuple)
