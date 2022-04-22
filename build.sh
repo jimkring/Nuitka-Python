@@ -9,8 +9,8 @@ set -x
 sudo apt-get update
 sudo apt-get install -y build-essential checkinstall libreadline-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev
 
-short_version=$(git branch --show-current | sed -e 's#\.##')
-long_version=$(git branch --show-current)
+long_version=$(git branch --show-current 2>/dev/null || git symbolic-ref --short HEAD)
+short_version=$(echo $long_version | sed -e 's#\.##')
 
 # Have this as a standard path. We are not yet relocatable, but that will come hopefully.
 target=/opt/nuitka-python${short_version}
