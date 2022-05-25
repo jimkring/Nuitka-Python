@@ -144,6 +144,8 @@ Tools/ssl/win32
 /Python/frozen_modules/
 
 # Nuitka-Python specifics here:
-nuget-result
+nuget-result*
 output
+output32
+
 
