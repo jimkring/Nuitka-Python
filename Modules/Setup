@@ -164,7 +164,7 @@ _symtable symtablemodule.c
 # it, depending on your system -- see the GNU readline instructions.
 # It's okay for this to be a shared library, too.
 
-readline readline.c -l:libreadline.a -l:libtermcap.a
+readline readline.c -l:libreadline.a
 
 
 # Modules that should always be present (non UNIX dependent):
