@@ -97,7 +97,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;uuid.lib;odbc32.lib;odbccp32.lib;shlwapi.lib;ws2_32.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>	  
-      <AdditionalLibraryDirectories Condition="'$(Platform)'=='Win32'">C:\src\Nuitka-Python\externals\tcltk-8.6.9.0\win32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="'$(Platform)'=='Win32'">..\..\Nuitka-Python\externals\tcltk-8.6.12.0\win32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="'$(Platform)'=='x64'">..\..\Nuitka-Python\externals\tcltk-8.6.12.0\amd64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
