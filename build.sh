@@ -29,8 +29,16 @@ set -x
 # happens to also delete all the static libraries that we built.
 export "PREFIX=$(pwd)/../Nuitka-Python-Deps"
 export "CFLAGS=-I${PREFIX}/include -fPIC"
+export "CXXFLAGS=-I${PREFIX}/include -fPIC"
+export "CPPFLAGS=-I${PREFIX}/include" 
 export "LDFLAGS=-L${PREFIX}/lib"
-export "PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig"
+export "PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig:${PREFIX}/share/pkgconfig"
+
+mkdir -p ${PREFIX}/lib
+
+if [ ! -h ${PREFIX}/lib64 ]; then
+  ln -s lib ${PREFIX}/lib64
+fi
 
 mkdir -p dep-build
 cd dep-build
@@ -42,6 +50,7 @@ cd ncurses-6.4
 ./configure --prefix=${PREFIX} --disable-shared --enable-termcap --enable-widec --enable-getcap
 make -j$(nproc --all)
 make install
+ln -s ncursesw/* ${PREFIX}/include/
 cd ..
 fi
 
@@ -215,10 +224,20 @@ make install
 cd ..
 fi
 
-if [ ! -d libXft-2.3.8 ]; then
-curl -L https://xorg.freedesktop.org/releases/individual/lib/libXft-2.3.8.tar.gz -o libXft.tar.gz
-tar -xf libXft.tar.gz
-cd libXft-2.3.8
+if [ ! -d fontconfig-2.15.0 ]; then
+curl -L https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.15.0.tar.gz -o fontconfig.tar.gz
+tar -xf fontconfig.tar.gz
+cd fontconfig-2.15.0
+./configure --prefix=${PREFIX} --disable-shared
+make -j$(nproc --all)
+make install
+cd ..
+fi
+
+if [ ! -d xcb-proto-1.16.0 ]; then
+curl -L https://xorg.freedesktop.org/archive/individual/proto/xcb-proto-1.16.0.tar.gz -o xcb-proto.tar.gz
+tar -xf xcb-proto.tar.gz
+cd xcb-proto-1.16.0
 ./configure --prefix=${PREFIX} --disable-shared
 make -j$(nproc --all)
 make install
@@ -229,6 +248,16 @@ if [ ! -d libxcb-1.16 ]; then
 curl -L https://xorg.freedesktop.org/releases/individual/lib/libxcb-1.16.tar.gz -o libxcb.tar.gz
 tar -xf libxcb.tar.gz
 cd libxcb-1.16
+./configure --prefix=${PREFIX} --disable-shared
+make -j$(nproc --all)
+make install
+cd ..
+fi
+
+if [ ! -d libXft-2.3.8 ]; then
+curl -L https://xorg.freedesktop.org/releases/individual/lib/libXft-2.3.8.tar.gz -o libXft.tar.gz
+tar -xf libXft.tar.gz
+cd libXft-2.3.8
 ./configure --prefix=${PREFIX} --disable-shared
 make -j$(nproc --all)
 make install
@@ -285,32 +314,12 @@ make install
 cd ..
 fi
 
-if [ ! -d fontconfig-2.15.0 ]; then
-curl -L https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.15.0.tar.gz -o fontconfig.tar.gz
-tar -xf fontconfig.tar.gz
-cd fontconfig-2.15.0
-./configure --prefix=${PREFIX} --disable-shared
-make -j$(nproc --all)
-make install
-cd ..
-fi
-
 if [ ! -d tcl8.6.13 ]; then
 curl -L http://downloads.sourceforge.net/project/tcl/Tcl/8.6.13/tcl8.6.13-src.tar.gz -o tcl.tar.gz
 tar -xf tcl.tar.gz
 cd tcl8.6.13/unix
 ./configure --prefix=${PREFIX} --enable-shared=no --enable-threads
 make -j$(nproc --all)
-make install
-cd ../..
-fi
-
-if [ ! -d tk8.6.13 ]; then
-curl -L http://downloads.sourceforge.net/project/tcl/Tcl/8.6.13/tk8.6.13-src.tar.gz -o tk.tar.gz
-tar -xf tk.tar.gz
-cd tk8.6.13/unix
-./configure --prefix=${PREFIX} --enable-shared=no --enable-threads --with-tcl=${PREFIX}/lib
-make -j$(nproc --all) "X11_LIB_SWITCHES=-l:libX11.a -l:libxcb.a -l:libXss.a -l:libfontconfig.a -l:libXft.a -l:libXext.a -l:libXrandr.a -l:libXau.a -l:libXrender.a -l:libXdmcp.a -l:libfreetype.a -l:libexpat.a -l:libpng.a -l:libharfbuzz.a -l:libX11.a -l:libxcb.a -l:libbz2.a"
 make install
 cd ../..
 fi
@@ -323,6 +332,16 @@ cd expat-2.5.0
 make -j$(nproc --all)
 make install
 cd ..
+fi
+
+if [ ! -d tk8.6.13 ]; then
+curl -L http://downloads.sourceforge.net/project/tcl/Tcl/8.6.13/tk8.6.13-src.tar.gz -o tk.tar.gz
+tar -xf tk.tar.gz
+cd tk8.6.13/unix
+./configure --prefix=${PREFIX} --enable-shared=no --enable-threads --with-tcl=${PREFIX}/lib
+make -j$(nproc --all) "X11_LIB_SWITCHES=-l:libX11.a -l:libxcb.a -l:libXss.a -l:libfontconfig.a -l:libXft.a -l:libXext.a -l:libXrandr.a -l:libXau.a -l:libXrender.a -l:libXdmcp.a -l:libfreetype.a -l:libexpat.a -l:libpng.a -l:libharfbuzz.a -l:libX11.a -l:libxcb.a -l:libbz2.a"
+make install
+cd ../..
 fi
 
 if [ ! -d mpdecimal-4.0.0 ]; then
@@ -430,3 +449,4 @@ $ELEVATE ln -s base "$target/dependency_libs/zlib"
 
 
 $ELEVATE "$target/bin/python${long_version}" -m rebuildpython
+$ELEVATE "$target/bin/python${long_version}" -m pip install cffi
